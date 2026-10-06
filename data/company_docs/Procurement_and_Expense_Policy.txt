@@ -1,0 +1,20 @@
+=== CENTRALIGN TECHNOLOGIES INC. — PROCUREMENT & PURCHASING POLICY ===
+Corporate Finance & Fiscal Governance | Threshold Standards 2026
+============================================================
+
+METADATA & DETAILS:
+  Department: Finance & Accounting
+  Document ID: FIN-PROC-2026-01
+  Financial Authority Limit: $3,000.00 USD Autonomous Threshold
+  Authorizer: Marcus Thorne, Chief Financial Officer
+------------------------------------------------------------
+
+## 1. Autonomous Approval Thresholds
+Any commercial invoice or purchase requisition equal to or less than $3,000.00 USD may be processed and recorded autonomously by certified automated workflows or staff accountants. Transactions strictly exceeding $3,000.00 USD require explicit Human-in-the-Loop authorization from the Finance Director or CFO before entry into the general ledger.
+
+## 2. Corporate Credit Card & Expense Reimbursements
+Individual employee expense claims exceeding $1,000.00 USD require direct supervisor pre-approval. Itemized digital receipts must be submitted within 14 calendar days of incurring the expense. Alcohol, luxury dining, and unapproved flight upgrades are strictly non-reimbursable.
+
+## 3. Preferred Vendors and Payment Terms
+Standard vendor payment terms are Net-30 from receipt of valid commercial invoice. Approved cloud hosting partners include Global Cloud Hosting and CloudScale Networks. Office equipment and IT hardware must be procured through Dell Enterprise or OfficeMax Pro.
+

@@ -11,3 +11,5 @@ services:
         value: "true"
       - key: STEP_DELAY_SECONDS
         value: "1.5"
+      - key: PUBLIC_BASE_URL
+        value: "https://autonomous-ai-task-worker.onrender.com"

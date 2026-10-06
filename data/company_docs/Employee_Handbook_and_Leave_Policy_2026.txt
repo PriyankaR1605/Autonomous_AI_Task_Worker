@@ -1,0 +1,23 @@
+=== CENTRALIGN TECHNOLOGIES INC. — EMPLOYEE HANDBOOK ===
+Version 4.2 | Human Resources & Workplace Standards | Effective 2026
+============================================================
+
+METADATA & DETAILS:
+  Department: Human Resources
+  Document ID: HR-POL-2026-04
+  Effective Date: January 1, 2026
+  Approved By: Elena Vance, VP of People & Culture
+------------------------------------------------------------
+
+## 1. Annual Paid Time Off (PTO) Guidelines
+Full-time regular employees accrue 20 paid vacation days per calendar year. Leave requests under 3 consecutive days require direct manager sign-off within 2 business days. Leave requests of 5 or more days must be submitted at least 2 weeks in advance. Employees may carry over a maximum of 5 unused leave days into the subsequent calendar year.
+
+## 2. Sick and Medical Leave
+All staff members receive 10 paid sick days annually. Sick leave of more than 3 consecutive working days requires a qualified medical practitioner note uploaded to the HR portal.
+
+## 3. Remote Work & Core Collaboration Hours
+CentrAlign operates on a hybrid-first model. Core operational hours across all domestic offices are 10:00 AM to 4:00 PM local time. Remote employees are expected to maintain availability via Slack and respond to high-priority operational requests within 60 minutes.
+
+## 4. Performance Reviews and Title Promotions
+Performance reviews are held biannually in June and December. Job title updates and merit-based compensation increases require dual approval from the Department Head and the VP of HR.
+

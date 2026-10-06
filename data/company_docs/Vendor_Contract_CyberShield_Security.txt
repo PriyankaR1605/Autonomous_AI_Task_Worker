@@ -1,0 +1,18 @@
+=== MASTER SERVICES AGREEMENT — CYBERSHIELD SECURITY LLC ===
+Enterprise Security Operations Center (SOC) Managed Services
+============================================================
+
+METADATA & DETAILS:
+  Vendor Name: CyberShield Security LLC
+  Contract Reference: MSA-2026-CS-781
+  Effective Term: January 15, 2026 to January 14, 2028
+  Annual Value: $84,000.00 USD ($7,000.00/month)
+  Contact Person: Rachel Adams (radams@cybershield-sec.com)
+------------------------------------------------------------
+
+## 1. Scope of Managed Monitoring
+Vendor shall provide 24x7x365 managed SIEM monitoring, threat hunting, and automated endpoint containment across all CentrAlign cloud virtual networks and user workstations.
+
+## 2. Incident Response Guarantees
+Vendor guarantees initial containment of confirmed critical security incidents within 15 minutes of automated detection. Failure to meet monthly SLA entitles CentrAlign to a 10% credit penalty.
+

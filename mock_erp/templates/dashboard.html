@@ -3,26 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CentrAlign ERP - Invoices Dashboard</title>
+    <title>CentrAlign Enterprise Operations Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-indigo-600', 'text-white');
+                el.classList.add('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-800');
+            });
+            const target = document.getElementById('tab-' + tabId);
+            if (target) target.classList.remove('hidden');
+            const btn = document.getElementById('btn-tab-' + tabId);
+            if (btn) {
+                btn.classList.add('bg-indigo-600', 'text-white');
+                btn.classList.remove('text-slate-400', 'hover:bg-slate-800');
+            }
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const active = urlParams.get('tab') || '{{ active_tab }}' || 'overview';
+            switchTab(active);
+        });
+    </script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen">
-    <!-- Top Navigation -->
-    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col">
+    <!-- Top Global Navigation Header -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md bg-slate-900/90">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-600/30">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/25">
                     CA
                 </div>
                 <div>
-                    <span class="font-bold text-lg text-white">CentrAlign ERP</span>
-                    <span class="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-700/50 px-2 py-0.5 rounded-full ml-2">Internal Sandbox</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-lg text-white tracking-tight">CentrAlign Enterprise</span>
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono font-medium">LIVE PRODUCTION</span>
+                    </div>
+                    <span class="text-xs text-slate-400">Autonomous Operations Platform — {{ profile.legal_name }}</span>
                 </div>
             </div>
 
             <div class="flex items-center gap-4">
-                <span id="user-session" class="text-xs text-slate-300 bg-slate-700/60 px-3 py-1.5 rounded-full border border-slate-600">
-                    👤 Logged in as: <strong class="text-white">{{ user }}</strong>
+                <span id="user-session" class="text-xs text-slate-300 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Operator: <strong class="text-white">{{ user }}</strong> (Finance & Ops Admin)</span>
                 </span>
                 <a href="/logout" id="btn-logout" class="text-xs text-rose-400 hover:text-rose-300 font-medium px-3 py-1.5 rounded-lg border border-rose-500/30 hover:bg-rose-500/10 transition">
                     Sign Out
@@ -31,76 +56,653 @@
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Notification Banner if newly created -->
+    <!-- Sub-Navbar Navigation Tabs -->
+    <div class="bg-slate-900/60 border-b border-slate-800 sticky top-16 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto py-2">
+            <button id="btn-tab-overview" onclick="switchTab('overview')" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                📊 Overview
+            </button>
+            <button id="btn-tab-invoices" onclick="switchTab('invoices')" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                🧾 Invoices ({{ invoices|length }})
+            </button>
+            <button id="btn-tab-employees" onclick="switchTab('employees')" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                👥 HR & Staff ({{ employees|length }})
+            </button>
+            <button id="btn-tab-tickets" onclick="switchTab('tickets')" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                🎫 IT & Support ({{ tickets|length }})
+                {% if critical_tickets_count > 0 %}
+                <span class="bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">{{ critical_tickets_count }}</span>
+                {% endif %}
+            </button>
+            <button id="btn-tab-inventory" onclick="switchTab('inventory')" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                📦 Inventory & POs
+                {% if low_stock|length > 0 %}
+                <span class="bg-amber-500 text-slate-950 text-[10px] px-1.5 py-0.2 rounded-full font-bold">{{ low_stock|length }} low</span>
+                {% endif %}
+            </button>
+            <button id="btn-tab-crm" onclick="switchTab('crm')" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                💼 CRM & Deals ({{ customers|length }})
+            </button>
+            <button id="btn-tab-expenses" onclick="switchTab('expenses')" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                💰 Expenses ({{ expenses|length }})
+            </button>
+            <button id="btn-tab-policies" onclick="switchTab('policies')" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+                📜 Policies & Governance
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+        <!-- Toast / Alert Banner -->
         {% if message %}
-        <div id="success-banner" class="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between shadow-lg">
+        <div id="success-banner" class="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between shadow-lg animate-fade-in">
             <div class="flex items-center gap-3">
-                <svg class="w-6 h-6 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span class="font-medium">{{ message }}</span>
+                <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-sm font-medium">{{ message }}</span>
             </div>
         </div>
         {% endif %}
 
-        <!-- Header Actions -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <div>
-                <h1 class="text-2xl font-bold text-white tracking-tight">Accounts Payable & Invoices</h1>
-                <p class="text-sm text-slate-400 mt-1">Review, track, and register incoming vendor invoices.</p>
+        <!-- TAB 1: EXECUTIVE OVERVIEW -->
+        <div id="tab-overview" class="tab-content space-y-6">
+            <!-- Metric KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Headcount</span>
+                        <span class="text-indigo-400 bg-indigo-500/10 p-2 rounded-lg text-sm">👥</span>
+                    </div>
+                    <div class="mt-3 flex items-baseline gap-2">
+                        <span class="text-2xl font-bold text-white">{{ employees|length }}</span>
+                        <span class="text-xs text-slate-400">across 7 departments</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Q3 Budget Burn</span>
+                        <span class="text-emerald-400 bg-emerald-500/10 p-2 rounded-lg text-sm">💵</span>
+                    </div>
+                    <div class="mt-3 flex items-baseline gap-2">
+                        <span class="text-2xl font-bold text-emerald-400">${{ "%.0f"|format(total_spent_q3 / 1000) }}k</span>
+                        <span class="text-xs text-slate-400">of ${{ "%.0f"|format(total_budget_q3 / 1000) }}k ({{ "%.1f"|format((total_spent_q3 / total_budget_q3) * 100) }}%)</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Invoices</span>
+                        <span class="text-amber-400 bg-amber-500/10 p-2 rounded-lg text-sm">🧾</span>
+                    </div>
+                    <div class="mt-3 flex items-baseline gap-2">
+                        <span class="text-2xl font-bold text-white">{{ invoices|length }}</span>
+                        <span class="text-xs text-amber-400">Payables & Receivables</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Critical Tickets</span>
+                        <span class="text-rose-400 bg-rose-500/10 p-2 rounded-lg text-sm">🚨</span>
+                    </div>
+                    <div class="mt-3 flex items-baseline gap-2">
+                        <span class="text-2xl font-bold text-rose-400">{{ critical_tickets_count }}</span>
+                        <span class="text-xs text-slate-400">requiring immediate SLA action</span>
+                    </div>
+                </div>
             </div>
-            <div>
-                <a href="/invoices/new" id="btn-new-invoice"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    New Invoice Entry
-                </a>
+
+            <!-- Departmental Budget Grid & Company Overview -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Departments Breakdown -->
+                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center justify-between">
+                        <span>Departmental Operating Budgets (Q3 2026)</span>
+                        <span class="text-xs text-slate-400 font-normal">Currency: USD</span>
+                    </h2>
+                    <div class="space-y-4">
+                        {% for dept in departments %}
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <span class="font-medium text-slate-200">{{ dept.name }} (Lead: {{ dept.head_of_dept }})</span>
+                                <span class="text-slate-400">${{ "{:,.0f}".format(dept.spent_q3) }} / ${{ "{:,.0f}".format(dept.budget_q3) }} ({{ "%.1f"|format((dept.spent_q3 / dept.budget_q3) * 100) }}%)</span>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                <div class="bg-indigo-500 h-2 rounded-full" style="width: {{ (dept.spent_q3 / dept.budget_q3) * 100 }}%"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Corporate Metadata -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg space-y-4">
+                    <h2 class="text-base font-bold text-white mb-3">Corporate Profile</h2>
+                    <div class="text-xs space-y-2.5 text-slate-300">
+                        <div>
+                            <span class="text-slate-500 block">Legal Entity</span>
+                            <span class="font-medium text-white">{{ profile.legal_name }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Tax Registration / EIN</span>
+                            <span class="font-mono text-indigo-300">{{ profile.tax_id }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Headquarters</span>
+                            <span>{{ profile.hq_address }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Commercial Banking</span>
+                            <span>{{ profile.bank_name }} ({{ profile.bank_routing }})</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Primary Web Domain</span>
+                            <a href="{{ profile.website }}" target="_blank" class="text-indigo-400 hover:underline">{{ profile.website }}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent System Activity Logs -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
+                <h2 class="text-base font-bold text-white mb-3">Live Enterprise Audit Stream</h2>
+                <div class="space-y-2 font-mono text-xs max-h-48 overflow-y-auto">
+                    {% for log in audit_logs %}
+                    <div class="p-2 rounded bg-slate-950 border border-slate-800/80 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold text-[10px]">{{ log.action }}</span>
+                            <span class="text-slate-300">{{ log.details }}</span>
+                        </div>
+                        <span class="text-slate-500 text-[10px] shrink-0">{{ log.timestamp }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
 
-        <!-- Invoices Table -->
-        <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden">
-            <div class="p-4 border-b border-slate-700 flex items-center justify-between bg-slate-800/80">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Records: {{ invoices|length }}</span>
-                <span class="text-xs text-slate-500">Live SQLite Ledger</span>
+        <!-- TAB 2: INVOICES & ACCOUNTS PAYABLE -->
+        <div id="tab-invoices" class="tab-content hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-tight">Accounts Payable & Commercial Invoices</h1>
+                    <p class="text-xs text-slate-400 mt-1">Full financial ledger of vendor payables and client receivables.</p>
+                </div>
+                <div>
+                    <a href="/invoices/new" id="btn-new-invoice"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        New Invoice Entry
+                    </a>
+                </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm" id="invoices-table">
-                    <thead class="bg-slate-900/60 text-xs uppercase text-slate-400 font-semibold border-b border-slate-700">
-                        <tr>
-                            <th class="px-6 py-4">Invoice #</th>
-                            <th class="px-6 py-4">Vendor Name</th>
-                            <th class="px-6 py-4">Amount</th>
-                            <th class="px-6 py-4">Due Date</th>
-                            <th class="px-6 py-4">Status</th>
-                            <th class="px-6 py-4">Created At</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-700/60 text-slate-200">
-                        {% for inv in invoices %}
-                        <tr class="hover:bg-slate-700/30 transition-colors invoice-row">
-                            <td class="px-6 py-4 font-mono font-medium text-indigo-300">{{ inv.invoice_number }}</td>
-                            <td class="px-6 py-4 font-medium text-white">{{ inv.vendor_name }}</td>
-                            <td class="px-6 py-4 font-semibold text-emerald-400">${{ "%.2f"|format(inv.amount) }} {{ inv.currency }}</td>
-                            <td class="px-6 py-4 text-slate-300">{{ inv.due_date }}</td>
-                            <td class="px-6 py-4">
-                                {% if inv.status == 'APPROVED' %}
-                                <span class="px-2.5 py-1 text-xs rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Approved</span>
-                                {% elif inv.status == 'PAID' %}
-                                <span class="px-2.5 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Paid</span>
-                                {% elif inv.status == 'ENTERED' %}
-                                <span class="px-2.5 py-1 text-xs rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Entered</span>
-                                {% else %}
-                                <span class="px-2.5 py-1 text-xs rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Pending</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 text-xs text-slate-400 font-mono">{{ inv.created_at }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+            <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs" id="invoices-table">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
+                            <tr>
+                                <th class="px-5 py-3.5">Invoice #</th>
+                                <th class="px-5 py-3.5">Counterparty / Vendor</th>
+                                <th class="px-5 py-3.5">Type</th>
+                                <th class="px-5 py-3.5">Amount</th>
+                                <th class="px-5 py-3.5">Due Date</th>
+                                <th class="px-5 py-3.5">Status</th>
+                                <th class="px-5 py-3.5">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            {% for inv in invoices %}
+                            <tr class="hover:bg-slate-800/40 transition-colors invoice-row">
+                                <td class="px-5 py-3.5 font-mono font-medium text-indigo-300">{{ inv.invoice_number }}</td>
+                                <td class="px-5 py-3.5 font-medium text-white">{{ inv.vendor_name }}</td>
+                                <td class="px-5 py-3.5">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ 'bg-purple-500/20 text-purple-300' if inv.invoice_type == 'PAYABLE' else 'bg-cyan-500/20 text-cyan-300' }}">
+                                        {{ inv.invoice_type }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3.5 font-semibold text-emerald-400">${{ "{:,.2f}".format(inv.amount) }} {{ inv.currency }}</td>
+                                <td class="px-5 py-3.5 text-slate-300">{{ inv.due_date }}</td>
+                                <td class="px-5 py-3.5">
+                                    {% if inv.status == 'APPROVED' %}
+                                    <span class="px-2 py-0.5 text-[11px] rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Approved</span>
+                                    {% elif inv.status == 'PAID' %}
+                                    <span class="px-2 py-0.5 text-[11px] rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Paid</span>
+                                    {% elif inv.status == 'ENTERED' %}
+                                    <span class="px-2 py-0.5 text-[11px] rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Entered</span>
+                                    {% else %}
+                                    <span class="px-2 py-0.5 text-[11px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-3.5 text-slate-400 max-w-xs truncate">{{ inv.notes or '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: HR & STAFF DIRECTORY -->
+        <div id="tab-employees" class="tab-content hidden space-y-6">
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight">Human Resources & Employee Directory</h1>
+                <p class="text-xs text-slate-400 mt-1">Staff records, organizational roles, PTO balances, and pending vacation approvals.</p>
+            </div>
+
+            <!-- Pending Leave Requests Section -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <h2 class="text-sm font-bold text-white mb-3 flex items-center justify-between">
+                    <span>Pending Leave Requests</span>
+                    <span class="text-xs text-indigo-400">{{ pending_leaves_count }} requiring review</span>
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px]">
+                            <tr>
+                                <th class="px-4 py-2.5">Req Code</th>
+                                <th class="px-4 py-2.5">Employee</th>
+                                <th class="px-4 py-2.5">Leave Type</th>
+                                <th class="px-4 py-2.5">Dates</th>
+                                <th class="px-4 py-2.5">Days</th>
+                                <th class="px-4 py-2.5">Reason</th>
+                                <th class="px-4 py-2.5">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            {% for lv in leave_requests %}
+                            <tr class="hover:bg-slate-800/40">
+                                <td class="px-4 py-2.5 font-mono text-indigo-300">{{ lv.req_code }}</td>
+                                <td class="px-4 py-2.5 font-medium text-white">{{ lv.emp_name }}</td>
+                                <td class="px-4 py-2.5">{{ lv.leave_type }}</td>
+                                <td class="px-4 py-2.5">{{ lv.start_date }} to {{ lv.end_date }}</td>
+                                <td class="px-4 py-2.5 font-bold">{{ lv.days_requested }} days</td>
+                                <td class="px-4 py-2.5 text-slate-400">{{ lv.reason }}</td>
+                                <td class="px-4 py-2.5">
+                                    {% if lv.status == 'APPROVED' %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold">APPROVED</span>
+                                    {% else %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 font-semibold">PENDING</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Employee Directory Table -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-xl overflow-hidden">
+                <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/60">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Active Staff Directory</span>
+                    <span class="text-xs text-slate-500">{{ employees|length }} Records</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-3">Emp ID</th>
+                                <th class="px-4 py-3">Full Name</th>
+                                <th class="px-4 py-3">Department</th>
+                                <th class="px-4 py-3">Job Title</th>
+                                <th class="px-4 py-3">Manager</th>
+                                <th class="px-4 py-3">Annual Salary</th>
+                                <th class="px-4 py-3">PTO Balance</th>
+                                <th class="px-4 py-3">Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            {% for emp in employees %}
+                            <tr class="hover:bg-slate-800/40">
+                                <td class="px-4 py-3 font-mono text-indigo-300">{{ emp.emp_code }}</td>
+                                <td class="px-4 py-3 font-medium text-white">{{ emp.name }}</td>
+                                <td class="px-4 py-3">{{ emp.department }}</td>
+                                <td class="px-4 py-3 text-slate-200">{{ emp.title }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ emp.manager_name }}</td>
+                                <td class="px-4 py-3 font-semibold text-emerald-400">${{ "{:,.0f}".format(emp.salary) }}</td>
+                                <td class="px-4 py-3 font-bold text-indigo-400">{{ emp.leave_balance }} days</td>
+                                <td class="px-4 py-3 font-mono text-amber-300">★ {{ emp.performance_rating }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: IT & SUPPORT HELPDESK -->
+        <div id="tab-tickets" class="tab-content hidden space-y-6">
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight">ITSM & Customer Support Helpdesk</h1>
+                <p class="text-xs text-slate-400 mt-1">Incident tickets, client bugs, billing inquiries, and engineer assignments.</p>
+            </div>
+
+            <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs" id="tickets-table">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-3">Ticket ID</th>
+                                <th class="px-4 py-3">Priority</th>
+                                <th class="px-4 py-3">Subject / Incident</th>
+                                <th class="px-4 py-3">Client / Requester</th>
+                                <th class="px-4 py-3">Category</th>
+                                <th class="px-4 py-3">Assignee</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">SLA Due</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            {% for tck in tickets %}
+                            <tr class="hover:bg-slate-800/40">
+                                <td class="px-4 py-3 font-mono text-indigo-300 font-semibold">{{ tck.ticket_number }}</td>
+                                <td class="px-4 py-3">
+                                    {% if tck.priority == 'CRITICAL' %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">CRITICAL</span>
+                                    {% elif tck.priority == 'HIGH' %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">HIGH</span>
+                                    {% elif tck.priority == 'MEDIUM' %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-blue-500/20 text-blue-300">MEDIUM</span>
+                                    {% else %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-700 text-slate-300">LOW</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 font-medium text-white max-w-sm truncate">{{ tck.subject }}</td>
+                                <td class="px-4 py-3 text-slate-300">{{ tck.customer_name }}</td>
+                                <td class="px-4 py-3">{{ tck.category }}</td>
+                                <td class="px-4 py-3 font-semibold {{ 'text-slate-500 italic' if tck.assignee == 'Unassigned' else 'text-emerald-400' }}">{{ tck.assignee }}</td>
+                                <td class="px-4 py-3">
+                                    {% if tck.status == 'OPEN' %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] bg-sky-500/20 text-sky-300 font-bold">OPEN</span>
+                                    {% elif tck.status == 'IN_PROGRESS' %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 font-bold">IN_PROGRESS</span>
+                                    {% elif tck.status == 'RESOLVED' %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-bold">RESOLVED</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 font-mono text-slate-400">{{ tck.sla_due }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: INVENTORY & HARDWARE ASSETS -->
+        <div id="tab-inventory" class="tab-content hidden space-y-6">
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight">Inventory, Hardware & Supply Chain</h1>
+                <p class="text-xs text-slate-400 mt-1">Warehouse stock levels, low-stock reorder thresholds, and active purchase orders.</p>
+            </div>
+
+            <!-- Low Stock Alert Banner -->
+            {% if low_stock|length > 0 %}
+            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+                <span class="font-bold text-amber-200">⚠️ Low Stock Warning:</span> {{ low_stock|length }} catalog items have breached reorder thresholds:
+                <ul class="list-disc list-inside mt-1 space-y-0.5">
+                    {% for item in low_stock %}
+                    <li><strong>{{ item.item_name }}</strong> (SKU: {{ item.sku }}) — In Stock: {{ item.stock_on_hand }} (Threshold: {{ item.reorder_threshold }}) | Supplier: {{ item.supplier }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Inventory Grid -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-3">SKU</th>
+                                <th class="px-4 py-3">Item Description</th>
+                                <th class="px-4 py-3">Category</th>
+                                <th class="px-4 py-3">Stock on Hand</th>
+                                <th class="px-4 py-3">Reorder Threshold</th>
+                                <th class="px-4 py-3">Unit Cost</th>
+                                <th class="px-4 py-3">Supplier</th>
+                                <th class="px-4 py-3">Location</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            {% for it in inventory %}
+                            <tr class="hover:bg-slate-800/40">
+                                <td class="px-4 py-3 font-mono text-indigo-300 font-semibold">{{ it.sku }}</td>
+                                <td class="px-4 py-3 font-medium text-white">{{ it.item_name }}</td>
+                                <td class="px-4 py-3">{{ it.category }}</td>
+                                <td class="px-4 py-3">
+                                    {% if it.stock_on_hand <= it.reorder_threshold %}
+                                    <span class="px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">{{ it.stock_on_hand }} (LOW)</span>
+                                    {% else %}
+                                    <span class="font-semibold text-emerald-400">{{ it.stock_on_hand }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 text-slate-400">{{ it.reorder_threshold }} units</td>
+                                <td class="px-4 py-3 font-semibold">${{ "{:,.2f}".format(it.unit_cost) }}</td>
+                                <td class="px-4 py-3">{{ it.supplier }}</td>
+                                <td class="px-4 py-3 text-slate-400 font-mono">{{ it.warehouse_location }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Purchase Orders Section -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <h2 class="text-sm font-bold text-white mb-3">Issued Purchase Orders (POs)</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-2.5">PO Number</th>
+                                <th class="px-4 py-2.5">Supplier</th>
+                                <th class="px-4 py-2.5">Items Summary</th>
+                                <th class="px-4 py-2.5">Total Cost</th>
+                                <th class="px-4 py-2.5">Status</th>
+                                <th class="px-4 py-2.5">Expected Delivery</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            {% for po in purchase_orders %}
+                            <tr class="hover:bg-slate-800/40">
+                                <td class="px-4 py-2.5 font-mono text-indigo-300 font-bold">{{ po.po_number }}</td>
+                                <td class="px-4 py-2.5 font-medium text-white">{{ po.supplier }}</td>
+                                <td class="px-4 py-2.5 text-slate-300">{{ po.items_summary }}</td>
+                                <td class="px-4 py-2.5 font-semibold text-emerald-400">${{ "{:,.2f}".format(po.total_cost) }}</td>
+                                <td class="px-4 py-2.5">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300">{{ po.status }}</span>
+                                </td>
+                                <td class="px-4 py-2.5 font-mono text-slate-400">{{ po.delivery_expected }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: CRM & DEALS PIPELINE -->
+        <div id="tab-crm" class="tab-content hidden space-y-6">
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight">Customer Relationship Management (CRM)</h1>
+                <p class="text-xs text-slate-400 mt-1">Enterprise client accounts, Annual Contract Value (ACV), and active sales opportunities.</p>
+            </div>
+
+            <!-- Customers Table -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-3">Account Code</th>
+                                <th class="px-4 py-3">Client Organization</th>
+                                <th class="px-4 py-3">Industry</th>
+                                <th class="px-4 py-3">Tier</th>
+                                <th class="px-4 py-3">ACV</th>
+                                <th class="px-4 py-3">Account Exec</th>
+                                <th class="px-4 py-3">Health</th>
+                                <th class="px-4 py-3">Primary Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            {% for c in customers %}
+                            <tr class="hover:bg-slate-800/40">
+                                <td class="px-4 py-3 font-mono text-indigo-300">{{ c.customer_code }}</td>
+                                <td class="px-4 py-3 font-medium text-white">{{ c.company_name }}</td>
+                                <td class="px-4 py-3">{{ c.industry }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ c.contract_tier }}</td>
+                                <td class="px-4 py-3 font-bold text-emerald-400">${{ "{:,.0f}".format(c.annual_contract_value) }}/yr</td>
+                                <td class="px-4 py-3 text-slate-300">{{ c.account_executive }}</td>
+                                <td class="px-4 py-3 font-mono font-bold text-emerald-400">{{ c.health_score }}%</td>
+                                <td class="px-4 py-3 text-slate-400">{{ c.primary_contact }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Deals Pipeline Section -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <h2 class="text-sm font-bold text-white mb-3">Active Sales Deals & Pipeline</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-2.5">Deal Name</th>
+                                <th class="px-4 py-2.5">Client</th>
+                                <th class="px-4 py-2.5">Stage</th>
+                                <th class="px-4 py-2.5">Deal Value</th>
+                                <th class="px-4 py-2.5">Target Close</th>
+                                <th class="px-4 py-2.5">Win Probability</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            {% for d in deals %}
+                            <tr class="hover:bg-slate-800/40">
+                                <td class="px-4 py-2.5 font-medium text-white">{{ d.deal_name }}</td>
+                                <td class="px-4 py-2.5 text-slate-300">{{ d.customer_name }}</td>
+                                <td class="px-4 py-2.5">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300">{{ d.stage }}</span>
+                                </td>
+                                <td class="px-4 py-2.5 font-semibold text-emerald-400">${{ "{:,.0f}".format(d.deal_value) }}</td>
+                                <td class="px-4 py-2.5 font-mono text-slate-400">{{ d.close_date }}</td>
+                                <td class="px-4 py-2.5 font-bold text-indigo-400">{{ d.probability_pct }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: EXPENSES -->
+        <div id="tab-expenses" class="tab-content hidden space-y-6">
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight">Employee Expense Reimbursements</h1>
+                <p class="text-xs text-slate-400 mt-1">Review employee expense claims against corporate spending policies.</p>
+            </div>
+
+            <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase">
+                            <tr>
+                                <th class="px-4 py-3">Report #</th>
+                                <th class="px-4 py-3">Employee</th>
+                                <th class="px-4 py-3">Department</th>
+                                <th class="px-4 py-3">Category</th>
+                                <th class="px-4 py-3">Merchant</th>
+                                <th class="px-4 py-3">Amount</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            {% for exp in expenses %}
+                            <tr class="hover:bg-slate-800/40">
+                                <td class="px-4 py-3 font-mono text-indigo-300">{{ exp.report_number }}</td>
+                                <td class="px-4 py-3 font-medium text-white">{{ exp.employee_name }}</td>
+                                <td class="px-4 py-3">{{ exp.department }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ exp.category }}</td>
+                                <td class="px-4 py-3 text-slate-200">{{ exp.merchant }}</td>
+                                <td class="px-4 py-3 font-bold text-emerald-400">${{ "{:,.2f}".format(exp.amount) }}</td>
+                                <td class="px-4 py-3">
+                                    {% if exp.status == 'APPROVED' %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold">APPROVED</span>
+                                    {% else %}
+                                    <span class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 font-semibold">SUBMITTED</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3 text-slate-400 truncate max-w-xs">{{ exp.notes }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 8: POLICIES & GOVERNANCE -->
+        <div id="tab-policies" class="tab-content hidden space-y-6">
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight">Corporate Policies & Knowledge Base</h1>
+                <p class="text-xs text-slate-400 mt-1">Official guidelines, compliance rules, thresholds, and vendor agreements.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-base">👥</span>
+                        <h3 class="font-bold text-white text-sm">Employee Handbook & Leave Policy</h3>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                        Annual leave (20 days), sick leave (10 days), remote working hours (10 AM - 4 PM), performance promotions, and workplace standards.
+                    </p>
+                    <span class="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">data/company_docs/Employee_Handbook_and_Leave_Policy_2026.pdf</span>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-base">💳</span>
+                        <h3 class="font-bold text-white text-sm">Procurement & Purchasing Policy</h3>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                        Autonomous transaction limit ($3,000 USD), Net-30 payment terms, corporate credit card rules, and expense receipt requirements.
+                    </p>
+                    <span class="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">data/company_docs/Procurement_and_Expense_Policy.pdf</span>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-base">🔒</span>
+                        <h3 class="font-bold text-white text-sm">IT Security & Access Control Governance</h3>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                        Hardware MFA, 90-day password rotation, ticket response SLAs: Critical P1 (30m), High P2 (2h), Medium P3 (8h).
+                    </p>
+                    <span class="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">data/company_docs/IT_Security_and_Access_Control_Policy.pdf</span>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-base">🤝</span>
+                        <h3 class="font-bold text-white text-sm">Vendor Contract — CyberShield Security LLC</h3>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                        Master Services Agreement for 24/7 Managed SOC & SIEM monitoring ($84,000/yr; $7,000/mo) active through Jan 2028.
+                    </p>
+                    <span class="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">data/company_docs/Vendor_Contract_CyberShield_Security.pdf</span>
+                </div>
             </div>
         </div>
     </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900/40 border-t border-slate-800 text-center py-4 text-xs text-slate-500">
+        CentrAlign Technologies Inc. &copy; 2026. Enterprise Internal Simulator. Live SQLite Engine.
+    </footer>
 </body>
 </html>

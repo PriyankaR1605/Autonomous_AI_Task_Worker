@@ -1,0 +1,23 @@
+=== CENTRALIGN TECHNOLOGIES INC. — IT SECURITY & DATA GOVERNANCE ===
+Information Security Management System | ISO/IEC 27001 Aligned
+============================================================
+
+METADATA & DETAILS:
+  Department: Information Technology & Security
+  Document ID: SEC-GOV-2026-09
+  Classification: Internal Enterprise Confidential
+  Lead Architect: David Miller, Lead Security Engineer
+------------------------------------------------------------
+
+## 1. Multi-Factor Authentication & Password Rules
+All enterprise accounts require hardware-backed FIDO2 MFA. Passwords must contain a minimum of 16 characters and undergo automated rotation flags every 90 days.
+
+## 2. Incident Severity Classification & SLAs
+- CRITICAL (P1): Production outage, data breach, or security compromise. Response SLA: 30 minutes. 24/7 coverage.
+- HIGH (P2): Core business workflow degraded with no workaround. Response SLA: 2 hours.
+- MEDIUM (P3): Individual employee blocker with workaround. Response SLA: 8 hours.
+- LOW (P4): General IT inquiry or routine hardware request. Response SLA: 24 hours.
+
+## 3. Access Rights & Privilege Escalation
+Administrative access to production databases and ERP financial ledgers requires role-based access control (RBAC) sign-off from IT Security. Dormant accounts inactive for 45 days are automatically disabled.
+

@@ -7,13 +7,16 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV HEADLESS_BROWSER=true
+ENV PUBLIC_BASE_URL=https://autonomous-ai-task-worker.onrender.com
 
-# Install system dependencies
+# Install system dependencies including Nginx and envsubst
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
     gnupg \
     ca-certificates \
+    nginx \
+    gettext-base \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python requirements
@@ -30,11 +33,11 @@ COPY . .
 # Set executable permission for startup script
 RUN chmod +x start.sh
 
-# Initialize database and sample invoices
-RUN python mock_erp/database.py && python scripts/generate_sample_invoices.py
+# Initialize database and comprehensive enterprise company dataset
+RUN python scripts/generate_company_data.py
 
-# Expose ports for Streamlit and ERP
+# Expose ports
 EXPOSE 8501 8000
 
-# Start services
+# Start services via unified entrypoint
 CMD ["bash", "start.sh"]

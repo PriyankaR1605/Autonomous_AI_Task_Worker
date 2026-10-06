@@ -7,50 +7,77 @@ from worker.tools.base import BaseTool, ToolResult
 
 class FileSearchTool(BaseTool):
     name = "file_search"
-    description = "Searches the document repository for vendor invoices and identifies candidate or latest files."
+    description = "Searches the enterprise repository for documents, invoices, policies, and contracts."
 
-    async def execute(self, vendor_name: Optional[str] = None, find_latest: bool = True) -> ToolResult:
+    async def execute(
+        self, 
+        query: Optional[str] = None, 
+        vendor_name: Optional[str] = None, 
+        folder: Optional[str] = None,
+        find_latest: bool = True
+    ) -> ToolResult:
         try:
-            invoices_dir = settings.INVOICES_DIR
-            if not os.path.exists(invoices_dir):
+            search_dirs = []
+            if folder:
+                custom_dir = os.path.join(settings.DATA_DIR, folder) if not os.path.isabs(folder) else folder
+                if os.path.exists(custom_dir):
+                    search_dirs.append(custom_dir)
+            else:
+                # Default search across all document repositories
+                docs_dir = os.path.join(settings.DATA_DIR, "company_docs")
+                invoices_dir = settings.INVOICES_DIR
+                if os.path.exists(invoices_dir):
+                    search_dirs.append(invoices_dir)
+                if os.path.exists(docs_dir):
+                    search_dirs.append(docs_dir)
+
+            if not search_dirs:
                 return ToolResult(
                     success=False,
-                    output=f"Invoices directory does not exist: {invoices_dir}",
+                    output="No document repository directories found.",
                     error="DIRECTORY_NOT_FOUND"
                 )
 
-            all_files = os.listdir(invoices_dir)
+            term = query or vendor_name or ""
+            clean_term = re.sub(r'[^a-zA-Z0-9]', '', term.lower()) if term else ""
+
             matched_files = []
 
-            clean_vendor = re.sub(r'[^a-zA-Z0-9]', '', vendor_name.lower()) if vendor_name else ""
+            for s_dir in search_dirs:
+                for root, _, files in os.walk(s_dir):
+                    for filename in files:
+                        if not (filename.endswith(".pdf") or filename.endswith(".txt") or filename.endswith(".md")):
+                            continue
 
-            for filename in all_files:
-                if not (filename.endswith(".pdf") or filename.endswith(".txt")):
-                    continue
+                        clean_fname = re.sub(r'[^a-zA-Z0-9]', '', filename.lower())
+                        
+                        # Match condition
+                        if not clean_term or (clean_term in clean_fname):
+                            filepath = os.path.join(root, filename)
+                            stat = os.stat(filepath)
+                            mtime = datetime.fromtimestamp(stat.st_mtime)
+                            
+                            score = 50
+                            if "latest" in filename.lower():
+                                score += 50
+                            if clean_term and clean_term in clean_fname:
+                                score += 30
+                            if filename.endswith(".pdf"):
+                                score += 10 # Prefer PDF over text companion
 
-                clean_fname = re.sub(r'[^a-zA-Z0-9]', '', filename.lower())
-                
-                # Check vendor match
-                if not clean_vendor or (clean_vendor in clean_fname):
-                    filepath = os.path.join(invoices_dir, filename)
-                    stat = os.stat(filepath)
-                    mtime = datetime.fromtimestamp(stat.st_mtime)
-                    
-                    # Score priority: filenames with "latest" rank higher
-                    score = 100 if "latest" in filename.lower() else 50
-                    
-                    matched_files.append({
-                        "filename": filename,
-                        "filepath": filepath,
-                        "size_bytes": stat.st_size,
-                        "modified_at": mtime.strftime("%Y-%m-%d %H:%M:%S"),
-                        "priority_score": score
-                    })
+                            matched_files.append({
+                                "filename": filename,
+                                "filepath": filepath,
+                                "directory": os.path.basename(root),
+                                "size_bytes": stat.st_size,
+                                "modified_at": mtime.strftime("%Y-%m-%d %H:%M:%S"),
+                                "priority_score": score
+                            })
 
             if not matched_files:
                 return ToolResult(
                     success=False,
-                    output=f"No invoice files found matching vendor '{vendor_name}' in {invoices_dir}.",
+                    output=f"No enterprise files found matching '{term}' in {search_dirs}.",
                     error="NO_FILES_FOUND"
                 )
 
@@ -61,7 +88,7 @@ class FileSearchTool(BaseTool):
                 latest = matched_files[0]
                 return ToolResult(
                     success=True,
-                    output=f"Located latest invoice for '{vendor_name}': {latest['filename']} (Path: {latest['filepath']})",
+                    output=f"Located target file for '{term}': {latest['filename']} (Path: {latest['filepath']})",
                     data={
                         "latest_file": latest,
                         "all_matches": matched_files,
@@ -71,13 +98,13 @@ class FileSearchTool(BaseTool):
 
             return ToolResult(
                 success=True,
-                output=f"Found {len(matched_files)} matching files for '{vendor_name}'.",
+                output=f"Found {len(matched_files)} matching files for '{term}'.",
                 data={"matches": matched_files, "count": len(matched_files)}
             )
 
         except Exception as e:
             return ToolResult(
                 success=False,
-                output=f"Failed to search invoice files: {str(e)}",
+                output=f"Failed to search enterprise files: {str(e)}",
                 error=str(e)
             )
