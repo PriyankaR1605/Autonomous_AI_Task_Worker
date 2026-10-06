@@ -1,0 +1,8 @@
+=== Company X ===
+Invoice Number: INV-CX-2026-102
+Issue Date: 2026-04-10
+Due Date: 2026-05-25
+Total Amount: $1200.00 USD
+
+Items:
+  - Initial System Architecture Onboarding (Qty: 1) @ $1200.00 = $1200.00

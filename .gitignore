@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Environment Variables & Secrets
+.env
+
+# Database (auto-created on startup)
+mock_erp/erp.db
+
+# Runtime Storage & Logs
+data/storage/screenshots/*.png
+data/storage/*.md
+*.log
+
+# Keep directory structure
+!data/sample_invoices/*
+!data/storage/.gitkeep
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CentrAlign ERP - Invoices Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+    <!-- Top Navigation -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-600/30">
+                    CA
+                </div>
+                <div>
+                    <span class="font-bold text-lg text-white">CentrAlign ERP</span>
+                    <span class="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-700/50 px-2 py-0.5 rounded-full ml-2">Internal Sandbox</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <span id="user-session" class="text-xs text-slate-300 bg-slate-700/60 px-3 py-1.5 rounded-full border border-slate-600">
+                    👤 Logged in as: <strong class="text-white">{{ user }}</strong>
+                </span>
+                <a href="/logout" id="btn-logout" class="text-xs text-rose-400 hover:text-rose-300 font-medium px-3 py-1.5 rounded-lg border border-rose-500/30 hover:bg-rose-500/10 transition">
+                    Sign Out
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Notification Banner if newly created -->
+        {% if message %}
+        <div id="success-banner" class="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between shadow-lg">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="font-medium">{{ message }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Header Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-white tracking-tight">Accounts Payable & Invoices</h1>
+                <p class="text-sm text-slate-400 mt-1">Review, track, and register incoming vendor invoices.</p>
+            </div>
+            <div>
+                <a href="/invoices/new" id="btn-new-invoice"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-lg shadow-indigo-600/30 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    New Invoice Entry
+                </a>
+            </div>
+        </div>
+
+        <!-- Invoices Table -->
+        <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden">
+            <div class="p-4 border-b border-slate-700 flex items-center justify-between bg-slate-800/80">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Records: {{ invoices|length }}</span>
+                <span class="text-xs text-slate-500">Live SQLite Ledger</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm" id="invoices-table">
+                    <thead class="bg-slate-900/60 text-xs uppercase text-slate-400 font-semibold border-b border-slate-700">
+                        <tr>
+                            <th class="px-6 py-4">Invoice #</th>
+                            <th class="px-6 py-4">Vendor Name</th>
+                            <th class="px-6 py-4">Amount</th>
+                            <th class="px-6 py-4">Due Date</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/60 text-slate-200">
+                        {% for inv in invoices %}
+                        <tr class="hover:bg-slate-700/30 transition-colors invoice-row">
+                            <td class="px-6 py-4 font-mono font-medium text-indigo-300">{{ inv.invoice_number }}</td>
+                            <td class="px-6 py-4 font-medium text-white">{{ inv.vendor_name }}</td>
+                            <td class="px-6 py-4 font-semibold text-emerald-400">${{ "%.2f"|format(inv.amount) }} {{ inv.currency }}</td>
+                            <td class="px-6 py-4 text-slate-300">{{ inv.due_date }}</td>
+                            <td class="px-6 py-4">
+                                {% if inv.status == 'APPROVED' %}
+                                <span class="px-2.5 py-1 text-xs rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Approved</span>
+                                {% elif inv.status == 'PAID' %}
+                                <span class="px-2.5 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Paid</span>
+                                {% elif inv.status == 'ENTERED' %}
+                                <span class="px-2.5 py-1 text-xs rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Entered</span>
+                                {% else %}
+                                <span class="px-2.5 py-1 text-xs rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-xs text-slate-400 font-mono">{{ inv.created_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

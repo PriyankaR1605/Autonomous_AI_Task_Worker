@@ -1,0 +1,8 @@
+=== Company Y ===
+Invoice Number: INV-CY-2026-440
+Issue Date: 2026-09-18
+Due Date: 2026-10-30
+Total Amount: $2890.50 USD
+
+Items:
+  - Secure Cold Storage Facility Lease (Qty: 1) @ $2890.50 = $2890.50

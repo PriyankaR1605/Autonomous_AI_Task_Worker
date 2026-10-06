@@ -1,0 +1,10 @@
+=== Company X ===
+Invoice Number: INV-CX-2026-904
+Issue Date: 2026-10-01
+Due Date: 2026-11-15
+Total Amount: $4850.00 USD
+
+Items:
+  - Enterprise Platform Annual License Tier 2 (Qty: 1) @ $3600.00 = $3600.00
+  - Premium API SLA Package (Oct 2026) (Qty: 1) @ $750.00 = $750.00
+  - Dedicated Cloud Engineering Support (5 hrs) (Qty: 5) @ $100.00 = $500.00
