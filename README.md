@@ -1,5 +1,11 @@
 # CentrAlign Autonomous AI Task Worker
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-brightgreen?style=for-the-badge&logo=render)](https://autonomous-ai-task-worker.onrender.com)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?style=for-the-badge&logo=github)](https://github.com/PriyankaR1605/Autonomous_AI_Task_Worker)
+
+> 🌐 **Live Cloud Deployment**: **[https://autonomous-ai-task-worker.onrender.com](https://autonomous-ai-task-worker.onrender.com)**  
+> *The prototype is deployed and accessible 24/7 in the cloud—anyone can run and inspect it from any device anytime!*
+
 An autonomous, multi-step task worker prototype that receives high-level natural language instructions, breaks them into executable milestones, operates across simulated enterprise tools (local file system, document intelligence, Playwright browser, internal ERP), handles unexpected conditions with self-healing retries, requests human approval when safety thresholds are triggered, and independently verifies outcome completion with an auditable evidence dossier.
 
 ---
