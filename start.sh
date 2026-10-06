@@ -1,10 +1,14 @@
 #!/bin/bash
 set -e
 
-PORT=${PORT:-8501}
+export PORT=${PORT:-8501}
+export PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-"https://autonomous-ai-task-worker.onrender.com"}
+export MAIN_APP_URL="https://autonomous-ai-task-worker.onrender.com"
+export RENDER="true"
+
 echo "=========================================================="
 echo "Starting CentrAlign Autonomous Task Worker Platform"
-echo "Public Base URL: https://autonomous-ai-task-worker.onrender.com"
+echo "Public Base URL: $PUBLIC_BASE_URL"
 echo "Active Port: $PORT"
 echo "=========================================================="
 

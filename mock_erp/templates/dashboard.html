@@ -44,8 +44,11 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <span id="user-session" class="text-xs text-slate-300 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
+            <div class="flex items-center gap-3">
+                <a href="/" id="btn-ai-console" class="text-xs text-indigo-300 hover:text-white font-medium px-3 py-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 transition flex items-center gap-1.5">
+                    <span>🤖 AI Worker Console</span>
+                </a>
+                <span id="user-session" class="hidden sm:flex text-xs text-slate-300 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span>Operator: <strong class="text-white">{{ user }}</strong> (Finance & Ops Admin)</span>
                 </span>

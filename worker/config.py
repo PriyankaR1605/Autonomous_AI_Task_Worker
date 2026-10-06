@@ -12,23 +12,18 @@ class Settings:
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     ANTHROPIC_API_KEY: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
 
-    # Cloud & Public Deployment URLs
-    # Render automatically sets RENDER_EXTERNAL_URL in production (e.g., https://autonomous-ai-task-worker.onrender.com)
-    RENDER_EXTERNAL_URL: Optional[str] = os.getenv("RENDER_EXTERNAL_URL")
-    IS_CLOUD_DEPLOYED: bool = bool(
-        os.getenv("RENDER") or 
-        os.getenv("RENDER_EXTERNAL_URL") or 
-        os.getenv("PORT")
-    )
+    # Primary Cloud Deployment Link
+    MAIN_APP_URL: str = "https://autonomous-ai-task-worker.onrender.com"
     
-    # Public Base URL relative to cloud deployment or local host
+    # Public Base URL relative to cloud deployment
+    # Always defaults to https://autonomous-ai-task-worker.onrender.com unless explicitly overridden
     PUBLIC_BASE_URL: str = (
         os.getenv("PUBLIC_BASE_URL") or 
         os.getenv("RENDER_EXTERNAL_URL") or 
-        ("https://autonomous-ai-task-worker.onrender.com" if bool(os.getenv("RENDER") or os.getenv("PORT")) else "http://127.0.0.1:8000")
+        MAIN_APP_URL
     ).rstrip("/")
 
-    # Mock ERP Internal Service configuration (used by internal tools / Playwright / API inside container)
+    # Mock ERP Internal Service configuration (used by internal background worker & Playwright inside container)
     MOCK_ERP_HOST: str = os.getenv("MOCK_ERP_HOST", "127.0.0.1")
     MOCK_ERP_PORT: int = int(os.getenv("MOCK_ERP_PORT", "8000"))
     MOCK_ERP_BASE_URL: str = os.getenv("MOCK_ERP_BASE_URL") or f"http://{MOCK_ERP_HOST}:{MOCK_ERP_PORT}"
@@ -51,16 +46,18 @@ class Settings:
     SCREENSHOTS_DIR: str = os.path.join(STORAGE_DIR, "screenshots")
 
     def get_public_url(self, path: str = "") -> str:
-        """Returns the public web URL for a route, relative to cloud or local base URL."""
+        """Returns the public web URL for a route, relative to the main deployment link."""
         clean_path = ("/" + path.lstrip("/")) if path else ""
         return f"{self.PUBLIC_BASE_URL}{clean_path}"
 
     def get_portal_url(self, path: str = "dashboard") -> str:
-        """Returns the URL to the Enterprise Portal (relative to public URL in cloud or local ERP)."""
+        """Returns the URL to the Enterprise Portal relative to the main deployment link."""
         clean_path = ("/" + path.lstrip("/")) if path else ""
-        if self.IS_CLOUD_DEPLOYED:
-            return f"{self.PUBLIC_BASE_URL}{clean_path}"
-        return f"{self.MOCK_ERP_BASE_URL}{clean_path}"
+        return f"{self.PUBLIC_BASE_URL}{clean_path}"
+
+    def get_relative_url(self, path: str = "dashboard") -> str:
+        """Returns pure relative path for browser navigation."""
+        return ("/" + path.lstrip("/")) if path else "/"
 
 settings = Settings()
 

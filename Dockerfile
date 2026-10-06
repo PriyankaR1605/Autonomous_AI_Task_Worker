@@ -8,6 +8,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV HEADLESS_BROWSER=true
 ENV PUBLIC_BASE_URL=https://autonomous-ai-task-worker.onrender.com
+ENV MAIN_APP_URL=https://autonomous-ai-task-worker.onrender.com
+ENV RENDER=true
 
 # Install system dependencies including Nginx and envsubst
 RUN apt-get update && apt-get install -y --no-install-recommends \

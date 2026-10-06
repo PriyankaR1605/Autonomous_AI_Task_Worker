@@ -24,31 +24,32 @@ st.set_page_config(
     layout="wide"
 )
 
-# Dynamic Base URL & Route Resolver
+# Primary Cloud Deployment Link & Relative Route Resolver
+MAIN_APP_URL = "https://autonomous-ai-task-worker.onrender.com"
+
 def get_dynamic_portal_url(path: str = "dashboard") -> str:
     """
-    Dynamically computes the route to the Enterprise Portal.
-    Resolves relative to the main application URL (https://autonomous-ai-task-worker.onrender.com)
-    when accessed in the cloud, or to the local host when developing locally.
+    Dynamically computes the Enterprise Portal URL relative to the primary deployment link:
+    https://autonomous-ai-task-worker.onrender.com/{path}
     """
     clean_path = path.lstrip("/")
-
-    # 1. Attempt detection from active browser request headers in Streamlit
     try:
         if hasattr(st, "context") and hasattr(st.context, "headers"):
             headers = st.context.headers
             host = headers.get("host") or headers.get("x-forwarded-host")
-            proto = headers.get("x-forwarded-proto", "https" if (host and "onrender.com" in host) else "http")
-            if host and ("onrender.com" in host or not any(l in host for l in ("127.0.0.1", "localhost"))):
+            if host and not any(l in host for l in ("127.0.0.1", "localhost")):
+                proto = headers.get("x-forwarded-proto", "https")
                 return f"{proto}://{host}/{clean_path}"
     except Exception:
         pass
 
-    # 2. Check settings / environment variables
-    return settings.get_portal_url(clean_path)
+    base = (getattr(settings, "PUBLIC_BASE_URL", None) or MAIN_APP_URL).rstrip("/")
+    return f"{base}/{clean_path}"
 
 portal_dashboard_url = get_dynamic_portal_url("dashboard")
 portal_login_url = get_dynamic_portal_url("login")
+relative_dashboard_path = "/dashboard"
+relative_login_path = "/login"
 
 # Custom Styling
 st.markdown("""
@@ -79,10 +80,11 @@ with st.sidebar:
     st.divider()
     st.subheader("🏢 Enterprise Environment")
     st.link_button("🌐 Open Mock ERP Dashboard", portal_dashboard_url, use_container_width=True)
-    st.markdown(f"**Portal URL**: [{portal_dashboard_url}]({portal_dashboard_url})")
-    st.markdown(f"**Login URL**: [{portal_login_url}]({portal_login_url})")
+    st.markdown(f"**Dashboard Route**: [`{relative_dashboard_path}`]({portal_dashboard_url})")
+    st.markdown(f"**Full URL**: [{portal_dashboard_url}]({portal_dashboard_url})")
+    st.markdown(f"**Login Route**: [`{relative_login_path}`]({portal_login_url})")
     st.markdown("**Credentials**: `admin` / `company_secure_pass`")
-    st.caption("Route dynamically adapts to live Render deployment or local runtime.")
+    st.caption("Routes are relative to https://autonomous-ai-task-worker.onrender.com")
     
     st.divider()
     st.subheader("🛡️ Safety Guardrails")
@@ -274,7 +276,7 @@ with tab_worker:
 
 with tab_explorer:
     st.subheader("🏢 Live Enterprise Database Explorer")
-    st.markdown(f"Direct live view of CentrAlign Technologies records. You can also view the full Tailwind web app at: [{portal_dashboard_url}]({portal_dashboard_url})")
+    st.markdown(f"Direct live view of CentrAlign Technologies records. You can also view the full Tailwind web app at: [`/dashboard`]({portal_dashboard_url}) ({portal_dashboard_url})")
     
     exp_invoices = get_all_invoices()
     exp_employees = get_all_employees()
