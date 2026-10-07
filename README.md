@@ -138,7 +138,9 @@ python run_mock_erp.py
 ```powershell
 streamlit run ui/dashboard.py
 ```
-Includes pre-configured presets for all departments, thought logs, visual proof screenshots, and live verification tables.
+- **Live Cloud AI Console**: [https://autonomous-ai-task-worker.onrender.com/](https://autonomous-ai-task-worker.onrender.com/)
+- **Local Sandbox**: `http://localhost:8501`
+- Includes pre-configured presets for all departments, real-time reasoning logs, visual proof screenshots, persistent session results, and live verification tables.
 
 #### Option B: Command Line Interface (CLI)
 Run any task across any department:

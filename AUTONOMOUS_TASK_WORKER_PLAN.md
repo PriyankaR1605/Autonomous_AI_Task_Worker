@@ -104,7 +104,10 @@ CentrAlign_AI_Project/
 │   │   ├── browser_tool.py          # Playwright browser controller with visual/DOM parser
 │   │   ├── document_tool.py         # PDF & document extraction tool
 │   │   ├── erp_api_tool.py          # Direct API tool for internal systems
-│   │   └── file_tool.py             # File system search, read, write operations
+│   │   ├── file_tool.py             # File system search, read, write operations
+│   │   ├── enterprise_db_tool.py    # Direct enterprise database CRUD tool
+│   │   ├── knowledge_tool.py        # Policy & governance retrieval tool
+│   │   └── analytics_tool.py        # Budget & inventory calculation tool
 │   └── reporting/
 │       ├── evidence.py              # Compiles audit logs, screenshots, and diffs
 │       └── templates/report.html    # HTML/Markdown summary template
@@ -301,25 +304,25 @@ sequenceDiagram
 
 ## 7. Step-by-Step Implementation Checklist
 
-- [ ] **Step 1: Project Scaffolding**
+- [x] **Step 1: Project Scaffolding**
   - Create directory structure and configure Python environment.
   - Set up `.env` for model provider keys.
-- [ ] **Step 2: Mock ERP System**
+- [x] **Step 2: Mock ERP System**
   - Implement FastAPI backend with SQLite storage and HTML frontend.
   - Verify manual login and invoice submission flow at `http://localhost:8000`.
-- [ ] **Step 3: Test Document Generation**
+- [x] **Step 3: Test Document Generation**
   - Create sample PDFs containing varying invoice formats.
-- [ ] **Step 4: Tool Implementations**
+- [x] **Step 4: Tool Implementations**
   - Build and unit test `document_tool.py` (PDF extraction).
   - Build and unit test `browser_tool.py` with Playwright.
-- [ ] **Step 5: Agent ReAct Engine & State Machine**
+- [x] **Step 5: Agent ReAct Engine & State Machine**
   - Implement `AgentState`, planner, and tool execution loop.
   - Integrate working memory storage across steps.
-- [ ] **Step 6: Self-Correction & Verification**
+- [x] **Step 6: Self-Correction & Verification**
   - Add selector fallback, retry logic, and independent verification assertions.
-- [ ] **Step 7: Human-in-the-Loop Implementation**
+- [x] **Step 7: Human-in-the-Loop Implementation**
   - Add approval criteria for high-stakes tasks with interactive pausing.
-- [ ] **Step 8: Interactive UI & Live Monitor**
+- [x] **Step 8: Interactive UI & Live Monitor**
   - Build Streamlit/Web dashboard displaying live browser actions, execution trace, and evidence cards.
-- [ ] **Step 9: Demo & Validation Testing**
+- [x] **Step 9: Demo & Validation Testing**
   - Execute end-to-end scenario: extract invoice -> input to ERP -> verify -> present report.
