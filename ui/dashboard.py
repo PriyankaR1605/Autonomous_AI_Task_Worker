@@ -7,6 +7,13 @@ import streamlit as st
 # Add project root to sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+import importlib
+import worker.context_retriever
+try:
+    importlib.reload(worker.context_retriever)
+except Exception:
+    pass
+
 from worker.config import settings
 from worker.agent import AutonomousWorker
 from worker.state import TaskStatus, ApprovalRequest, ActionStep
@@ -295,8 +302,10 @@ with st.form(key="natural_language_task_form", clear_on_submit=False):
         selected_domain_key = DOMAIN_MAP[selected_domain_label]
     
     with col_status:
-        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
-        summary_badge = EnterpriseContextRetriever.get_domain_summary(selected_domain_key)
+        try:
+            summary_badge = EnterpriseContextRetriever.get_domain_summary(selected_domain_key)
+        except Exception:
+            summary_badge = "Active Ledger"
         st.caption(f"📊 **Live Ledger Stats**: `{summary_badge}`")
 
     user_prompt_input = st.text_area(
