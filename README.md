@@ -55,7 +55,6 @@ CentrAlign incorporates synthetic, enterprise-grade datasets modeled after **Cen
 
 ```text
 CentrAlign_AI_Project/
-├── AUTONOMOUS_TASK_WORKER_PLAN.md   # Architectural master blueprint
 ├── requirements.txt                 # Project dependencies
 ├── .env.example / .env              # Configuration & thresholds
 ├── run_mock_erp.py                  # Launcher for mock ERP web portal
