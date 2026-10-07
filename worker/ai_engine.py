@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 from typing import Dict, Any, Tuple, Optional
@@ -26,6 +27,15 @@ Your duties:
 3. If an action was performed (or needs to be verified), report the status and reconciliation outcome clearly.
 4. If analytical calculations are required (e.g. leave balances, restock quantities, budget variances, expenditure sums), execute the math accurately.
 5. Format your response cleanly using executive Markdown: use bolding, bullet points, numbered lists, and structured summary sections.
+6. MANDATORY "NO DATA FOUND" RULE:
+   - Carefully verify whether the specific record, person, employee, invoice, vendor, ticket, SKU, or department requested in the user's task actually exists in the provided REAL ENTERPRISE DATA or operational results.
+   - If the requested data or entity is NOT present in the provided dataset, or if search_status is NO_DATA_FOUND, or if entity_found is false:
+     You MUST explicitly state:
+     "### ⚠️ No Data Found"
+     "No data found for '<requested entity/query>' in the enterprise dataset."
+   - Explain clearly that the requested record, employee, invoice, or entity does not exist in our corporate databases or company files.
+   - NEVER fabricate, hallucinate, or substitute another person, company, invoice, or record (e.g. do not substitute Sarah Jenkins or Company X when someone else was asked).
+   - List the available records or entities that DO exist in the dataset to assist the user.
 """
 
     @classmethod
@@ -79,7 +89,18 @@ Your duties:
                 ai_text = response.choices[0].message.content.strip()
                 return ai_text, f"AI Model: {clean_model}"
             except Exception as e:
-                logger.warning(f"LiteLLM completion encountered issue: {e}. Trying direct Gemini REST endpoint...")
+                err_str = str(e)
+                logger.warning(f"LiteLLM completion encountered issue: {err_str}.")
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                    logger.info("API quota exhausted. Transitioning directly to Local Intelligence Engine.")
+                    local_result = cls._local_enterprise_reasoning(
+                        task_instruction=task_instruction,
+                        domain=domain,
+                        enterprise_context=enterprise_context,
+                        operational_context=operational_context
+                    )
+                    return local_result, "CentrAlign Local Intelligence Engine"
+                logger.warning("Trying direct Gemini REST endpoint...")
 
             # Method B: Direct Google Gemini REST API via httpx
             if "gemini" in selected_model.lower() or effective_key.startswith("AIza") or effective_key.startswith("AQ."):
@@ -116,7 +137,10 @@ Your duties:
                                         if parts:
                                             ai_text = parts[0].get("text", "").strip()
                                             return ai_text, f"Gemini API ({mdl})"
-                                elif resp.status_code in (503, 429):
+                                elif resp.status_code == 429:
+                                    logger.info(f"Gemini model {mdl} quota exhausted (HTTP 429). Fast-failing to Local Reasoner.")
+                                    break
+                                elif resp.status_code == 503:
                                     logger.warning(f"Gemini model {mdl} busy (HTTP {resp.status_code}). Trying next fallback candidate...")
                                     continue
                         except Exception as candidate_err:
@@ -149,14 +173,46 @@ Your duties:
         p_lower = task_instruction.lower()
         op = operational_context or {}
 
+        # 0. Global Explicit "No Data Found" Check
+        if op.get("not_found") is True or enterprise_context.get("entity_found") is False:
+            queried = op.get("queried_entity") or enterprise_context.get("queried_entity") or task_instruction
+            reason = op.get("not_found_message") or enterprise_context.get("not_found_reason") or f"The requested record was not found in the {domain} dataset."
+            return (
+                f"### ⚠️ No Data Found\n\n"
+                f"No records matching **'{queried}'** were found in the enterprise dataset for domain **{domain.upper()}**.\n\n"
+                f"**System Findings:**\n"
+                f"- {reason}\n"
+                f"- The requested identifier, entity, or document does not exist in our corporate databases or repository files.\n\n"
+                f"*(💡 Note: Please verify the queried name, code, or identifier and try again.)*"
+            )
+
         # Domain A: HR & Employee Management
         if domain in ("hr_leave", "hr", "employee", "leave") or "sarah jenkins" in p_lower or "leave" in p_lower:
-            emp = enterprise_context.get("target_employee") or next(
-                (e for e in enterprise_context.get("employees", []) if "sarah" in e.get("name", "").lower()),
-                None
-            )
+            emp = enterprise_context.get("target_employee")
+
+            # Validate whether a specific employee was requested but does not exist
+            emp_match = re.search(r'(?:employee|for|staff)\s+([A-Za-z\s]+?)(?:,|\.|\scheck|\sapprove|\sand|\'s|$)', task_instruction, re.IGNORECASE)
+            if emp_match:
+                cand = emp_match.group(1).strip()
+                if cand.lower() not in ("all", "all employees", "leave", "vacation", "each", "any", "staff", "a", "an", "the"):
+                    if not emp:
+                        all_emps = enterprise_context.get("employees", [])
+                        emp_names = ", ".join(e.get("name", "") for e in all_emps[:6])
+                        return (
+                            f"### ⚠️ No Data Found\n\n"
+                            f"No employee records matching **'{cand}'** were found in the HR employee directory.\n\n"
+                            f"**Available Employees in Dataset:**\n"
+                            f"- {emp_names} (and others in the Master Employees Table).\n\n"
+                            f"*(💡 Please verify the spelling or employee code and try again.)*"
+                        )
+
+            if not emp:
+                emp = next((e for e in enterprise_context.get("employees", []) if "sarah" in e.get("name", "").lower()), None)
+
             reqs = enterprise_context.get("leave_requests", [])
-            pending_req = next((r for r in reqs if r.get("status") == "PENDING"), None)
+            pending_req = next((r for r in reqs if emp and emp.get("name", "").lower() in r.get("emp_name", "").lower() and r.get("status") == "PENDING"), None)
+            if not pending_req:
+                pending_req = next((r for r in reqs if r.get("status") == "PENDING"), None)
 
             if emp:
                 days = pending_req.get("days_requested", 4) if pending_req else 4
@@ -182,6 +238,23 @@ Your duties:
 
         # Domain B: Commercial Invoices & AP
         elif domain in ("invoice", "finance", "ap") or "company x" in p_lower or "invoice" in p_lower:
+            vendor_match = re.search(r'(?:from|for|vendor)\s+([A-Za-z0-9\s]+?)(?:,|\.|\sand|\sextract|\senter|$)', task_instruction, re.IGNORECASE)
+            if vendor_match:
+                cand = vendor_match.group(1).strip()
+                if cand.lower() not in ("all", "latest", "the", "system", "our", "internal", "a", "an", "all vendors", "company"):
+                    has_vendor = any(cand.lower() in inv.get("vendor_name", "").lower() for inv in enterprise_context.get("invoices_in_ledger", []))
+                    has_file = any(re.sub(r'[^a-zA-Z0-9]', '', cand.lower()) in re.sub(r'[^a-zA-Z0-9]', '', f.lower()) for f in enterprise_context.get("available_invoice_files", []))
+                    if not has_vendor and not has_file and not op.get("vendor_name"):
+                        all_invs = enterprise_context.get("invoices_in_ledger", [])
+                        vendors_list = ", ".join(list(dict.fromkeys(i.get("vendor_name", "") for i in all_invs))[:6])
+                        return (
+                            f"### ⚠️ No Data Found\n\n"
+                            f"No invoice or vendor records matching **'{cand}'** were found in accounts payable.\n\n"
+                            f"**Available Vendors in Dataset:**\n"
+                            f"- {vendors_list} (and others in Master Invoices Register).\n\n"
+                            f"*(💡 Please check the vendor name or refer to the Master Invoices Register table.)*"
+                        )
+
             vendor = op.get("vendor_name", "Company X")
             inv_num = op.get("invoice_number", "INV-CX-2026-904")
             amt = op.get("amount", 4850.00)
@@ -203,6 +276,17 @@ Your duties:
 
         # Domain C: IT Support & Tickets
         elif domain in ("ticket", "it_support") or "ticket" in p_lower or "alex wong" in p_lower:
+            tck_match = re.search(r'\b(TCK-[A-Za-z0-9\-]+|INC-[A-Za-z0-9\-]+)\b', task_instruction, re.IGNORECASE)
+            if tck_match:
+                t_num_queried = tck_match.group(1).strip().upper()
+                tickets = enterprise_context.get("all_tickets", []) or enterprise_context.get("open_tickets", [])
+                if not any(t.get("ticket_number", "").upper() == t_num_queried for t in tickets):
+                    return (
+                        f"### ⚠️ No Data Found\n\n"
+                        f"No incident ticket matching **'{t_num_queried}'** was found in the ITSM support queue.\n\n"
+                        f"*(💡 Please verify the ticket identifier and try again.)*"
+                    )
+
             t_num = op.get("ticket_number", "TCK-2026-801")
             assignee = op.get("expected_assignee", "Alex Wong")
             status = op.get("expected_status", "IN_PROGRESS")
@@ -221,6 +305,17 @@ Your duties:
 
         # Domain D: Inventory & Restock
         elif domain in ("inventory", "supply_chain") or "inventory" in p_lower or "reorder" in p_lower:
+            sku_match = re.search(r'\b(SKU-[A-Za-z0-9\-]+)\b', task_instruction, re.IGNORECASE)
+            if sku_match:
+                s_id = sku_match.group(1).strip().upper()
+                catalog = enterprise_context.get("all_items", [])
+                if not any(i.get("sku", "").upper() == s_id for i in catalog):
+                    return (
+                        f"### ⚠️ No Data Found\n\n"
+                        f"No inventory item matching SKU **'{s_id}'** was found in the warehouse catalog.\n\n"
+                        f"*(💡 Please verify the SKU and try again.)*"
+                    )
+
             po_num = op.get("po_number", "PO-2026-AUTO-01")
             supplier = op.get("supplier", "Dell Enterprise Store")
             total = op.get("total_cost", 1750.00)
@@ -240,6 +335,17 @@ Your duties:
 
         # Domain E: Expense Compliance
         elif domain in ("expense", "compliance") or "expense" in p_lower:
+            exp_match = re.search(r'\b(EXP-[A-Za-z0-9\-]+)\b', task_instruction, re.IGNORECASE)
+            if exp_match:
+                e_id = exp_match.group(1).strip().upper()
+                all_exps = enterprise_context.get("all_expenses", [])
+                if not any(e.get("report_number", "").upper() == e_id for e in all_exps):
+                    return (
+                        f"### ⚠️ No Data Found\n\n"
+                        f"No expense claim matching report ID **'{e_id}'** was found in the financial ledger.\n\n"
+                        f"*(💡 Please verify the expense report number and try again.)*"
+                    )
+
             rep_num = op.get("report_number", "EXP-2026-101")
             emp_name = op.get("employee_name", "Sarah Jenkins")
             amt = op.get("amount", 1250.00)
@@ -257,6 +363,21 @@ Your duties:
 
         # Domain F: Budgets & Analytics
         elif domain in ("budget", "analytics") or "budget" in p_lower or "variance" in p_lower:
+            dept_match = re.search(r'(?:department|for)\s+([A-Za-z\s&]+?)(?:,|\.|\sbudget|\sexpenditure|\sand|$)', task_instruction, re.IGNORECASE)
+            if dept_match:
+                cand = dept_match.group(1).strip()
+                if cand.lower() not in ("all", "q3", "the", "our", "total", "each", "any", "marketing", "engineering", "sales", "hr", "it", "finance"):
+                    departments = enterprise_context.get("departments", [])
+                    if not any(cand.lower() in d.get("name", "").lower() for d in departments):
+                        dept_names = ", ".join(d.get("name", "") for d in departments)
+                        return (
+                            f"### ⚠️ No Data Found\n\n"
+                            f"No department matching **'{cand}'** was found in company budget allocations.\n\n"
+                            f"**Available Departments:**\n"
+                            f"- {dept_names}\n\n"
+                            f"*(💡 Please verify the department name and try again.)*"
+                        )
+
             dept = op.get("department", "Marketing & Growth")
             budget = op.get("budget", 450000.00)
             spent = op.get("spent", 382400.00)

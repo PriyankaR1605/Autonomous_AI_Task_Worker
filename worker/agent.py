@@ -205,17 +205,30 @@ class AutonomousWorker:
 
         # M1: Locate Target Invoice File
         m1.status = StepStatus.IN_PROGRESS
-        vendor_match = re.search(r'(?:from|for)\s+([A-Za-z0-9\s]+?)(?:,|\.|\sand|\sextract|\senter|$)', self.state.user_prompt, re.IGNORECASE)
-        target_vendor = vendor_match.group(1).strip() if vendor_match else "Company X"
+        vendor_match = re.search(r'(?:from|for|vendor)\s+([A-Za-z0-9\s]+?)(?:,|\.|\sand|\sextract|\senter|$)', self.state.user_prompt, re.IGNORECASE)
+        inv_match = re.search(r'\b(INV-[A-Za-z0-9\-]+)\b', self.state.user_prompt, re.IGNORECASE)
+        
+        target_vendor = vendor_match.group(1).strip() if vendor_match else ("Company X" if not inv_match else inv_match.group(1).strip())
 
-        thought_1 = f"I need to locate the latest invoice document for '{target_vendor}' in the enterprise repository."
+        thought_1 = f"I need to locate the invoice document or records for '{target_vendor}' in the enterprise repository."
         res_1 = await self.file_tool.execute(vendor_name=target_vendor, find_latest=True)
         self._log_step(thought_1, self.file_tool.name, {"vendor_name": target_vendor, "find_latest": True}, res_1.output, res_1.success, res_1.error)
 
         if not res_1.success:
             m1.status = StepStatus.FAILED
-            self.state.status = TaskStatus.FAILED
-            self.state.final_summary = f"Execution stopped: {res_1.output}"
+            m1.result_summary = f"No invoice documents found matching '{target_vendor}'."
+            self.state.status = TaskStatus.COMPLETED
+            self.state.working_memory["not_found"] = True
+            self.state.working_memory["queried_entity"] = target_vendor
+            self.state.working_memory["not_found_message"] = f"No invoice records or documents found for '{target_vendor}' in the enterprise repository."
+            self.state.final_summary = (
+                f"### ⚠️ No Data Found\n\n"
+                f"No invoice records or documents were found for **'{target_vendor}'** in the enterprise dataset.\n\n"
+                f"**Search Assessment:**\n"
+                f"- Searched accounts payable directories and invoice document repository.\n"
+                f"- 0 matching documents or ledger records found.\n\n"
+                f"*(💡 Please check the vendor name or invoice number, or refer to the Master Invoices Register.)*"
+            )
             return
 
         latest_file = res_1.data["latest_file"]
@@ -353,7 +366,17 @@ class AutonomousWorker:
 
         # Extract target assignee from prompt
         assignee_match = re.search(r'assign(?:\s+them)?\s+to\s+([A-Za-z\s]+?)(?:,|\.|\sand|\smark|$)', self.state.user_prompt, re.IGNORECASE)
-        target_assignee = assignee_match.group(1).strip() if assignee_match else "Alex Wong"
+        if assignee_match:
+            raw_assignee = assignee_match.group(1).strip()
+            # Clean common title prefixes (e.g. "Senior Engineer Alex Wong" -> "Alex Wong")
+            clean_assignee = re.sub(r'^(?:senior|lead|staff|principal|systems|software)?\s*(?:engineer|architect|manager|analyst)?\s*', '', raw_assignee, flags=re.IGNORECASE).strip()
+            target_assignee = clean_assignee or raw_assignee
+        else:
+            target_assignee = "Alex Wong"
+
+        # Check for specific ticket identifier
+        tck_match = re.search(r'\b(TCK-[A-Za-z0-9\-]+|INC-[A-Za-z0-9\-]+)\b', self.state.user_prompt, re.IGNORECASE)
+        queried_tck = tck_match.group(1).strip().upper() if tck_match else None
 
         # M1: Query Tickets Queue
         m1.status = StepStatus.IN_PROGRESS
@@ -362,18 +385,38 @@ class AutonomousWorker:
         self._log_step(thought_1, self.db_tool.name, {"action": "list_tickets", "status": "OPEN"}, res_1.output, res_1.success)
 
         tickets = res_1.data.get("tickets", [])
+
+        if queried_tck:
+            matched_tck = next((t for t in tickets if t.get("ticket_number", "").upper() == queried_tck), None)
+            if not matched_tck:
+                m1.status = StepStatus.FAILED
+                m1.result_summary = f"No ticket found matching '{queried_tck}' in queue."
+                self.state.status = TaskStatus.COMPLETED
+                self.state.working_memory["not_found"] = True
+                self.state.working_memory["queried_entity"] = queried_tck
+                self.state.working_memory["not_found_message"] = f"Incident ticket '{queried_tck}' does not exist in ITSM queue."
+                self.state.final_summary = (
+                    f"### ⚠️ No Data Found\n\n"
+                    f"No incident ticket matching **'{queried_tck}'** was found in the ITSM support queue.\n\n"
+                    f"*(💡 Please verify the ticket identifier and try again.)*"
+                )
+                return
+
         m1.status = StepStatus.SUCCESS
         m1.result_summary = f"Retrieved {len(tickets)} open support tickets."
         await asyncio.sleep(settings.STEP_DELAY_SECONDS)
 
         # M2: Filter Critical P1 Tickets & Check SLA
         m2.status = StepStatus.IN_PROGRESS
-        critical_tickets = [t for t in tickets if t.get("priority") == "CRITICAL"]
-        if not critical_tickets:
-            # Fallback to high priority or first ticket
-            critical_tickets = [t for t in tickets if t.get("priority") in ("CRITICAL", "HIGH")] or tickets[:1]
+        if queried_tck:
+            target_ticket = next(t for t in tickets if t.get("ticket_number", "").upper() == queried_tck)
+            critical_tickets = [target_ticket]
+        else:
+            critical_tickets = [t for t in tickets if t.get("priority") == "CRITICAL"]
+            if not critical_tickets:
+                critical_tickets = [t for t in tickets if t.get("priority") in ("CRITICAL", "HIGH")] or tickets[:1]
+            target_ticket = critical_tickets[0]
 
-        target_ticket = critical_tickets[0]
         self.state.working_memory["target_ticket"] = target_ticket["ticket_number"]
         self.state.working_memory["ticket_number"] = target_ticket["ticket_number"]
         self.state.working_memory["subject"] = target_ticket["subject"]
@@ -392,7 +435,32 @@ class AutonomousWorker:
         # M3: Verify Assignee Staff Capacity & Approval
         m3.status = StepStatus.IN_PROGRESS
         emp_res = await self.db_tool.execute(action="get_employee", name=target_assignee)
+        if not emp_res.success and assignee_match:
+            # Check if any employee name in DB matches as substring
+            all_emp_res = await self.db_tool.execute(action="list_all_employees")
+            all_emps = all_emp_res.data.get("employees", []) if all_emp_res.success else []
+            matched_emp = next((e for e in all_emps if e["name"].lower() in target_assignee.lower() or target_assignee.lower() in e["name"].lower()), None)
+            if matched_emp:
+                target_assignee = matched_emp["name"]
+                self.state.working_memory["expected_assignee"] = target_assignee
+                emp_res = await self.db_tool.execute(action="get_employee", name=target_assignee)
+
         self._log_step(f"Verifying engineer profile and role for {target_assignee}.", self.db_tool.name, {"name": target_assignee}, emp_res.output, emp_res.success)
+
+        if not emp_res.success and assignee_match:
+            m3.status = StepStatus.FAILED
+            m3.result_summary = f"Assignee '{target_assignee}' was not found in employee directory."
+            self.state.status = TaskStatus.COMPLETED
+            self.state.working_memory["not_found"] = True
+            self.state.working_memory["queried_entity"] = target_assignee
+            self.state.working_memory["not_found_message"] = f"Staff member '{target_assignee}' was not found in employee directory."
+            self.state.final_summary = (
+                f"### ⚠️ No Data Found\n\n"
+                f"Engineer or staff member **'{target_assignee}'** was not found in the employee directory.\n\n"
+                f"*(💡 Please verify the name of the assigned engineer and try again.)*"
+            )
+            return
+
         m3.status = StepStatus.SUCCESS
         m3.result_summary = f"Confirmed {target_assignee} is active Lead Systems Architect with capacity."
         await asyncio.sleep(settings.STEP_DELAY_SECONDS)
@@ -468,8 +536,19 @@ class AutonomousWorker:
 
         if not res_1.success:
             m1.status = StepStatus.FAILED
-            self.state.status = TaskStatus.FAILED
-            self.state.final_summary = f"HR record not found: {res_1.output}"
+            m1.result_summary = f"No employee found matching '{target_emp}' in HR directory."
+            self.state.status = TaskStatus.COMPLETED
+            self.state.working_memory["not_found"] = True
+            self.state.working_memory["queried_entity"] = target_emp
+            self.state.working_memory["not_found_message"] = f"Employee '{target_emp}' was not found in the HR directory."
+            self.state.final_summary = (
+                f"### ⚠️ No Data Found\n\n"
+                f"No employee record found for **'{target_emp}'** in the enterprise HR directory.\n\n"
+                f"**Directory Lookup:**\n"
+                f"- Searched corporate employee directory.\n"
+                f"- 0 personnel records found matching '{target_emp}'.\n\n"
+                f"*(💡 Please check the spelling or employee ID and try again.)*"
+            )
             return
 
         emp_data = res_1.data
@@ -487,13 +566,23 @@ class AutonomousWorker:
 
         reqs = res_2.data.get("leave_requests", [])
         target_req = next((r for r in reqs if target_emp.lower() in r["emp_name"].lower()), None)
-        if not target_req and reqs:
+        if not target_req and not emp_match and reqs:
             target_req = reqs[0]
 
         if not target_req:
             m2.status = StepStatus.FAILED
-            self.state.status = TaskStatus.FAILED
-            self.state.final_summary = f"No pending leave requests found for {target_emp}."
+            m2.result_summary = f"No pending leave requests found for {target_emp}."
+            self.state.status = TaskStatus.COMPLETED
+            self.state.working_memory["not_found"] = True
+            self.state.working_memory["queried_entity"] = f"Pending leave for {target_emp}"
+            self.state.working_memory["not_found_message"] = f"No pending leave requests found for employee '{target_emp}' in HR records."
+            self.state.final_summary = (
+                f"### ⚠️ No Data Found\n\n"
+                f"No pending leave requests found for employee **'{target_emp}'** in HR records.\n\n"
+                f"**Status:**\n"
+                f"- Employee {target_emp} has {emp_data['leave_balance']} days PTO remaining.\n"
+                f"- There are currently no unapproved or pending leave requests awaiting approval for this employee.\n"
+            )
             return
 
         self.state.working_memory["req_code"] = target_req["req_code"]
@@ -581,6 +670,9 @@ class AutonomousWorker:
     async def _run_inventory_pipeline(self):
         m1, m2, m3, m4, m5 = self.state.milestones[:5]
 
+        sku_match = re.search(r'\b(SKU-[A-Za-z0-9\-]+)\b', self.state.user_prompt, re.IGNORECASE)
+        queried_sku = sku_match.group(1).strip().upper() if sku_match else None
+
         # M1: Scan Inventory Stock
         m1.status = StepStatus.IN_PROGRESS
         thought_1 = "Auditing inventory warehouse catalog for all hardware and equipment assets."
@@ -588,13 +680,35 @@ class AutonomousWorker:
         self._log_step(thought_1, self.db_tool.name, {"action": "check_low_stock"}, res_1.output, res_1.success)
 
         low_items = res_1.data.get("low_stock", [])
+
+        if queried_sku:
+            all_cat_res = await self.db_tool.execute(action="list_inventory")
+            all_cat = all_cat_res.data.get("inventory", []) if all_cat_res.success else []
+            matched_item = next((i for i in all_cat if i.get("sku", "").upper() == queried_sku), None)
+            if not matched_item:
+                m1.status = StepStatus.FAILED
+                m1.result_summary = f"No item found matching SKU '{queried_sku}' in catalog."
+                self.state.status = TaskStatus.COMPLETED
+                self.state.working_memory["not_found"] = True
+                self.state.working_memory["queried_entity"] = queried_sku
+                self.state.working_memory["not_found_message"] = f"SKU '{queried_sku}' was not found in the warehouse catalog."
+                self.state.final_summary = (
+                    f"### ⚠️ No Data Found\n\n"
+                    f"No inventory item found matching SKU **'{queried_sku}'** in the warehouse catalog.\n\n"
+                    f"*(💡 Please verify the SKU and try again.)*"
+                )
+                return
+
         m1.status = StepStatus.SUCCESS
         m1.result_summary = f"Identified {len(low_items)} catalog items needing restock."
         await asyncio.sleep(settings.STEP_DELAY_SECONDS)
 
         # M2: Identify Target Items Below Threshold
         m2.status = StepStatus.IN_PROGRESS
-        target_item = low_items[0] if low_items else {"sku": "SKU-MON-4K", "item_name": "Dell UltraSharp 32\" 4K Monitor", "stock_on_hand": 3, "reorder_threshold": 6, "target_reorder_qty": 12, "unit_cost": 650.00, "supplier": "Dell Enterprise Store"}
+        if queried_sku:
+            target_item = matched_item
+        else:
+            target_item = low_items[0] if low_items else {"sku": "SKU-MON-4K", "item_name": "Dell UltraSharp 32\" 4K Monitor", "stock_on_hand": 3, "reorder_threshold": 6, "target_reorder_qty": 12, "unit_cost": 650.00, "supplier": "Dell Enterprise Store"}
         m2.status = StepStatus.SUCCESS
         m2.result_summary = f"Selected critical depleted item: {target_item['item_name']} (SKU: {target_item['sku']}, Stock: {target_item['stock_on_hand']}/{target_item['reorder_threshold']})."
         await asyncio.sleep(settings.STEP_DELAY_SECONDS)
@@ -696,12 +810,53 @@ class AutonomousWorker:
         self._log_step("Retrieving pending employee expense reports from financial ledger.", self.db_tool.name, {"status": "SUBMITTED"}, res_2.output, res_2.success)
 
         exps = res_2.data.get("expenses", [])
-        target_exp = exps[0] if exps else {"report_number": "EXP-2026-101", "employee_name": "Sarah Jenkins", "amount": 1250.00, "merchant": "Dell Enterprise Store"}
+
+        exp_match = re.search(r'\b(EXP-[A-Za-z0-9\-]+)\b', self.state.user_prompt, re.IGNORECASE)
+        claimant_match = re.search(r'(?:claimant|submitted by|filed by|for employee|by employee)\s+([A-Za-z\s]+?)(?:,|\.|\sand|$)', self.state.user_prompt, re.IGNORECASE)
+
+        target_exp = None
+        if exp_match:
+            queried_id = exp_match.group(1).strip().upper()
+            target_exp = next((e for e in exps if e.get("report_number", "").upper() == queried_id), None)
+            if not target_exp:
+                m2.status = StepStatus.FAILED
+                m2.result_summary = f"No expense claim found matching '{queried_id}'."
+                self.state.status = TaskStatus.COMPLETED
+                self.state.working_memory["not_found"] = True
+                self.state.working_memory["queried_entity"] = queried_id
+                self.state.working_memory["not_found_message"] = f"Expense report '{queried_id}' was not found in financial records."
+                self.state.final_summary = (
+                    f"### ⚠️ No Data Found\n\n"
+                    f"No expense claim found matching **'{queried_id}'** in the enterprise expense ledger.\n\n"
+                    f"*(💡 Please verify the report number and try again.)*"
+                )
+                return
+        elif claimant_match:
+            cand = claimant_match.group(1).strip()
+            if cand.lower() not in ("all", "recent", "policy", "threshold", "travel", "procurement", "unapproved", "approval", "reports", "expenses"):
+                target_exp = next((e for e in exps if cand.lower() in e.get("employee_name", "").lower()), None)
+                if not target_exp:
+                    m2.status = StepStatus.FAILED
+                    m2.result_summary = f"No expense claim found for '{cand}'."
+                    self.state.status = TaskStatus.COMPLETED
+                    self.state.working_memory["not_found"] = True
+                    self.state.working_memory["queried_entity"] = cand
+                    self.state.working_memory["not_found_message"] = f"No expense claims found for employee '{cand}'."
+                    self.state.final_summary = (
+                        f"### ⚠️ No Data Found\n\n"
+                        f"No expense claims found for employee **'{cand}'** in the financial ledger.\n\n"
+                        f"*(💡 Please verify the claimant name and try again.)*"
+                    )
+                    return
+
+        if not target_exp:
+            target_exp = exps[0] if exps else {"report_number": "EXP-2026-101", "employee_name": "Sarah Jenkins", "amount": 1250.00, "merchant": "Dell Enterprise Store"}
+
         self.state.working_memory["report_number"] = target_exp["report_number"]
         self.state.working_memory["employee_name"] = target_exp["employee_name"]
         self.state.working_memory["amount"] = target_exp["amount"]
         m2.status = StepStatus.SUCCESS
-        m2.result_summary = f"Located {len(exps)} submitted claims. Evaluating {target_exp['report_number']} by {target_exp['employee_name']} (${target_exp['amount']:,.2f})."
+        m2.result_summary = f"Located submitted claims. Evaluating {target_exp['report_number']} by {target_exp['employee_name']} (${target_exp['amount']:,.2f})."
         await asyncio.sleep(settings.STEP_DELAY_SECONDS)
 
         # M3: Evaluate Policy Compliance
@@ -762,8 +917,27 @@ class AutonomousWorker:
     async def _run_budget_pipeline(self):
         m1, m2, m3, m4, m5 = self.state.milestones[:5]
 
-        dept_match = re.search(r'(?:marketing|engineering|sales|hr|it|finance)', self.state.user_prompt, re.IGNORECASE)
-        dept_name = dept_match.group(0).capitalize() if dept_match else "Marketing & Growth"
+        dept_match = re.search(r'\b(marketing|engineering|sales|hr|it|finance|operations|legal)\b', self.state.user_prompt, re.IGNORECASE)
+        explicit_dept_match = re.search(r'(?:department|for)\s+([A-Za-z\s&]+?)(?:,|\.|\sbudget|\sexpenditure|\sand|$)', self.state.user_prompt, re.IGNORECASE)
+
+        if dept_match:
+            k = dept_match.group(1).lower()
+            dept_map = {
+                "marketing": "Marketing & Growth",
+                "engineering": "Engineering",
+                "sales": "Sales",
+                "hr": "Human Resources",
+                "it": "IT & Infrastructure",
+                "finance": "Finance",
+                "operations": "Operations",
+                "legal": "Legal & Compliance"
+            }
+            dept_name = dept_map.get(k, k.capitalize())
+        elif explicit_dept_match:
+            cand = explicit_dept_match.group(1).strip()
+            dept_name = cand if cand.lower() not in ("all", "q3", "the", "our", "total", "each", "any") else "Marketing & Growth"
+        else:
+            dept_name = "Marketing & Growth"
 
         # M1: Query Budget Allocation
         m1.status = StepStatus.IN_PROGRESS
@@ -772,8 +946,18 @@ class AutonomousWorker:
         self._log_step(thought_1, self.db_tool.name, {"department": dept_name}, res_1.output, res_1.success)
 
         if not res_1.success:
-            dept_name = "Marketing & Growth"
-            res_1 = await self.db_tool.execute(action="get_department_budget", department=dept_name)
+            m1.status = StepStatus.FAILED
+            m1.result_summary = f"No department found matching '{dept_name}'."
+            self.state.status = TaskStatus.COMPLETED
+            self.state.working_memory["not_found"] = True
+            self.state.working_memory["queried_entity"] = dept_name
+            self.state.working_memory["not_found_message"] = f"Department '{dept_name}' does not exist in company budget allocations."
+            self.state.final_summary = (
+                f"### ⚠️ No Data Found\n\n"
+                f"No department found matching **'{dept_name}'** in the company budget allocations.\n\n"
+                f"*(💡 Please verify the department name and try again.)*"
+            )
+            return
 
         dept_data = res_1.data
         self.state.working_memory["department"] = dept_data["name"]

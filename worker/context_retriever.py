@@ -130,6 +130,27 @@ class EnterpriseContextRetriever:
 
             pending_leaves = [r for r in leave_requests if r.get("status") == "PENDING"]
 
+            # Entity presence validation
+            entity_found = True
+            not_found_reason = ""
+            queried_entity = ""
+
+            emp_match = re.search(r'(?:employee|for|staff)\s+([A-Za-z\s]+?)(?:,|\.|\scheck|\sapprove|\sand|\'s|$)', prompt, re.IGNORECASE)
+            code_match = re.search(r'\b(EMP-\d+)\b', prompt, re.IGNORECASE)
+            if emp_match:
+                candidate = emp_match.group(1).strip()
+                if candidate.lower() not in ("all", "all employees", "leave", "vacation", "each", "any", "staff", "a", "an", "the"):
+                    queried_entity = candidate
+                    if not target_emp_data:
+                        entity_found = False
+                        not_found_reason = f"Employee '{candidate}' was not found in the enterprise employee directory."
+            elif code_match:
+                candidate = code_match.group(1).strip().upper()
+                queried_entity = candidate
+                if not target_emp_data:
+                    entity_found = False
+                    not_found_reason = f"Employee code '{candidate}' was not found in the enterprise employee directory."
+
             return {
                 "domain": "HR & Employee Directory",
                 "domain_key": "hr_leave",
@@ -140,6 +161,10 @@ class EnterpriseContextRetriever:
                 "departments": departments,
                 "target_employee": target_emp_data,
                 "target_department": target_dept,
+                "entity_found": entity_found,
+                "not_found_reason": not_found_reason,
+                "queried_entity": queried_entity,
+                "search_status": "FOUND" if entity_found else "NO_DATA_FOUND",
                 "leave_policy_summary": handbook or "Annual leave allocation: 20 days standard PTO. Requests >5 days require manager approval."
             }
 
@@ -161,6 +186,31 @@ class EnterpriseContextRetriever:
                 if inv.get("vendor_name", "").lower() in p_lower or inv.get("invoice_number", "").lower() in p_lower:
                     matched_invoices.append(inv)
 
+            # Entity presence validation
+            entity_found = True
+            not_found_reason = ""
+            queried_entity = ""
+
+            vendor_match = re.search(r'(?:from|for|vendor)\s+([A-Za-z0-9\s]+?)(?:,|\.|\sand|\sextract|\senter|$)', prompt, re.IGNORECASE)
+            inv_match = re.search(r'\b(INV-[A-Za-z0-9\-]+)\b', prompt, re.IGNORECASE)
+
+            if inv_match:
+                queried_entity = inv_match.group(1).strip().upper()
+                has_inv = any(i.get("invoice_number", "").upper() == queried_entity for i in invoices)
+                has_inv_file = any(queried_entity.lower() in f.lower() for f in invoice_files)
+                if not has_inv and not has_inv_file:
+                    entity_found = False
+                    not_found_reason = f"Invoice '{queried_entity}' was not found in accounts payable records or document repository."
+            elif vendor_match:
+                cand = vendor_match.group(1).strip()
+                if cand.lower() not in ("all", "latest", "the", "system", "our", "internal", "a", "an", "all vendors", "company"):
+                    queried_entity = cand
+                    has_vendor = any(cand.lower() in inv.get("vendor_name", "").lower() for inv in invoices)
+                    has_vendor_file = any(re.sub(r'[^a-zA-Z0-9]', '', cand.lower()) in re.sub(r'[^a-zA-Z0-9]', '', f.lower()) for f in invoice_files)
+                    if not has_vendor and not has_vendor_file:
+                        entity_found = False
+                        not_found_reason = f"Vendor '{cand}' was not found in accounts payable invoices or document files."
+
             return {
                 "domain": "Finance & Accounts Payable",
                 "domain_key": "invoice",
@@ -168,6 +218,10 @@ class EnterpriseContextRetriever:
                 "invoices_in_ledger": invoices,
                 "matched_invoices": matched_invoices,
                 "available_invoice_files": invoice_files,
+                "entity_found": entity_found,
+                "not_found_reason": not_found_reason,
+                "queried_entity": queried_entity,
+                "search_status": "FOUND" if entity_found else "NO_DATA_FOUND",
                 "procurement_policy": procurement_policy or "Net-30 payment terms standard. Invoices >$3,000 require CFO sign-off.",
                 "pending_payable_count": len([i for i in invoices if i.get("status") in ("PENDING", "UNPAID")])
             }
@@ -182,6 +236,28 @@ class EnterpriseContextRetriever:
             critical_tickets = [t for t in tickets if t.get("priority") == "CRITICAL"]
             open_tickets = [t for t in tickets if t.get("status") != "RESOLVED"]
 
+            # Entity presence validation
+            entity_found = True
+            not_found_reason = ""
+            queried_entity = ""
+
+            tck_match = re.search(r'\b(TCK-[A-Za-z0-9\-]+|INC-[A-Za-z0-9\-]+)\b', prompt, re.IGNORECASE)
+            assignee_match = re.search(r'assign(?:\s+them)?\s+to\s+([A-Za-z\s]+?)(?:,|\.|\sand|\smark|$)', prompt, re.IGNORECASE)
+
+            if tck_match:
+                queried_entity = tck_match.group(1).strip().upper()
+                if not any(t.get("ticket_number", "").upper() == queried_entity for t in tickets):
+                    entity_found = False
+                    not_found_reason = f"Ticket '{queried_entity}' was not found in the ITSM incident queue."
+            elif assignee_match:
+                cand = assignee_match.group(1).strip()
+                if cand.lower() not in ("someone", "engineer", "staff", "agent", "senior engineer", "anyone"):
+                    has_assignee = any(cand.lower() in e.get("name", "").lower() for e in all_emp)
+                    if not has_assignee:
+                        queried_entity = cand
+                        entity_found = False
+                        not_found_reason = f"Engineer/staff member '{cand}' was not found in the employee directory."
+
             return {
                 "domain": "IT Support & Helpdesk Incident Queue",
                 "domain_key": "ticket",
@@ -189,6 +265,10 @@ class EnterpriseContextRetriever:
                 "open_tickets": open_tickets,
                 "critical_tickets": critical_tickets,
                 "it_staff": it_staff,
+                "entity_found": entity_found,
+                "not_found_reason": not_found_reason,
+                "queried_entity": queried_entity,
+                "search_status": "FOUND" if entity_found else "NO_DATA_FOUND",
                 "it_security_policy": it_security_policy or "P1/Critical incidents must be assigned and acknowledged within 1 hour."
             }
 
@@ -205,9 +285,30 @@ class EnterpriseContextRetriever:
                 name_words = [w for w in re.split(r'\W+', i_name) if len(w) > 3]
                 if (item.get("sku", "").lower() in p_lower or
                     i_name in p_lower or
-                    any(w in p_lower for w in name_words)):
+                    any(w in p_lower for w in name_words if w not in ("dell", "store", "enterprise"))):
                     target_item = item
                     break
+
+            # Entity presence validation
+            entity_found = True
+            not_found_reason = ""
+            queried_entity = ""
+
+            sku_match = re.search(r'\b(SKU-[A-Za-z0-9\-]+)\b', prompt, re.IGNORECASE)
+            item_match = re.search(r'(?:item|product|for|restock)\s+([A-Za-z0-9\s]+?)(?:,|\.|\sbelow|\scalculate|\sand|$)', prompt, re.IGNORECASE)
+
+            if sku_match:
+                queried_entity = sku_match.group(1).strip().upper()
+                if not any(i.get("sku", "").upper() == queried_entity for i in catalog):
+                    entity_found = False
+                    not_found_reason = f"SKU '{queried_entity}' was not found in the warehouse inventory catalog."
+            elif item_match:
+                cand = item_match.group(1).strip()
+                if cand.lower() not in ("all", "all items", "our inventory", "low stock", "threshold", "catalog", "warehouse", "items"):
+                    if not target_item and not any(cand.lower() in i.get("item_name", "").lower() for i in catalog):
+                        queried_entity = cand
+                        entity_found = False
+                        not_found_reason = f"Inventory item '{cand}' was not found in warehouse catalog."
 
             return {
                 "domain": "Inventory Catalog & Warehouse Procurement",
@@ -217,7 +318,11 @@ class EnterpriseContextRetriever:
                 "target_item": target_item,
                 "items_below_reorder_threshold": low_stock,
                 "existing_purchase_orders": existing_pos,
-                "low_stock_count": len(low_stock)
+                "low_stock_count": len(low_stock),
+                "entity_found": entity_found,
+                "not_found_reason": not_found_reason,
+                "queried_entity": queried_entity,
+                "search_status": "FOUND" if entity_found else "NO_DATA_FOUND"
             }
 
         # DOMAIN 5: EXPENSE AUDITING & COMPLIANCE
@@ -229,6 +334,27 @@ class EnterpriseContextRetriever:
             flagged = [e for e in expenses if e.get("amount", 0) > settings.HIGH_RISK_AMOUNT_THRESHOLD]
             pending = [e for e in expenses if e.get("status") == "PENDING"]
 
+            # Entity presence validation
+            entity_found = True
+            not_found_reason = ""
+            queried_entity = ""
+
+            exp_match = re.search(r'\b(EXP-[A-Za-z0-9\-]+)\b', prompt, re.IGNORECASE)
+            claimant_match = re.search(r'(?:employee|for|by)\s+([A-Za-z\s]+?)(?:,|\.|\sclaim|\sexpense|\sand|$)', prompt, re.IGNORECASE)
+
+            if exp_match:
+                queried_entity = exp_match.group(1).strip().upper()
+                if not any(e.get("report_number", "").upper() == queried_entity for e in expenses):
+                    entity_found = False
+                    not_found_reason = f"Expense report '{queried_entity}' was not found in financial records."
+            elif claimant_match:
+                cand = claimant_match.group(1).strip()
+                if cand.lower() not in ("all", "recent", "policy", "threshold", "travel", "procurement", "unapproved", "approval"):
+                    if not any(cand.lower() in e.get("employee_name", "").lower() for e in expenses):
+                        queried_entity = cand
+                        entity_found = False
+                        not_found_reason = f"No expense claims found for employee '{cand}'."
+
             return {
                 "domain": "Employee Expenses & Policy Compliance",
                 "domain_key": "expense",
@@ -237,7 +363,11 @@ class EnterpriseContextRetriever:
                 "flagged_over_threshold": flagged,
                 "pending_claims": pending,
                 "procurement_policy": procurement_policy or "Single expense items exceeding $1,000 require VP or CFO approval.",
-                "departments": departments
+                "departments": departments,
+                "entity_found": entity_found,
+                "not_found_reason": not_found_reason,
+                "queried_entity": queried_entity,
+                "search_status": "FOUND" if entity_found else "NO_DATA_FOUND"
             }
 
         # DOMAIN 6: BUDGETS & FINANCIAL ANALYTICS
@@ -249,6 +379,20 @@ class EnterpriseContextRetriever:
             # Highlight specific department if mentioned
             dept_matches = [d for d in departments if d.get("name", "").lower() in p_lower]
             target_dept = dept_matches[0] if dept_matches else None
+
+            # Entity presence validation
+            entity_found = True
+            not_found_reason = ""
+            queried_entity = ""
+
+            dept_match = re.search(r'(?:department|for)\s+([A-Za-z\s&]+?)(?:,|\.|\sbudget|\sexpenditure|\sand|$)', prompt, re.IGNORECASE)
+            if dept_match:
+                cand = dept_match.group(1).strip()
+                if cand.lower() not in ("all", "q3", "the", "our", "total", "each", "any", "marketing", "engineering", "sales", "hr", "it", "finance"):
+                    if not target_dept and not any(cand.lower() in d.get("name", "").lower() for d in departments):
+                        queried_entity = cand
+                        entity_found = False
+                        not_found_reason = f"Department '{cand}' was not found in company budget allocations."
 
             total_budget = sum(d.get("budget_q3", 0) for d in departments)
             total_spent = sum(d.get("spent_q3", 0) for d in departments)
@@ -264,7 +408,11 @@ class EnterpriseContextRetriever:
                 "total_allocated_budget": total_budget,
                 "total_expenditure_q3": total_spent,
                 "overall_variance": variance,
-                "variance_status": "Surplus" if variance >= 0 else "Deficit"
+                "variance_status": "Surplus" if variance >= 0 else "Deficit",
+                "entity_found": entity_found,
+                "not_found_reason": not_found_reason,
+                "queried_entity": queried_entity,
+                "search_status": "FOUND" if entity_found else "NO_DATA_FOUND"
             }
 
         # DOMAIN 7: CORPORATE POLICIES & GOVERNANCE
