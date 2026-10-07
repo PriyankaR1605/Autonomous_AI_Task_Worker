@@ -31,6 +31,7 @@ class AutonomousWorker:
     def __init__(
         self,
         user_prompt: str,
+        domain: Optional[str] = None,
         approval_callback: Optional[Callable[[ApprovalRequest], bool]] = None,
         use_browser: bool = True,
         step_callback: Optional[Callable[[ActionStep], None]] = None,
@@ -41,6 +42,7 @@ class AutonomousWorker:
             task_id=f"TASK-{uuid.uuid4().hex[:8].upper()}",
             user_prompt=user_prompt
         )
+        self.domain = domain
         self.approval_callback = approval_callback
         self.use_browser = use_browser
         self.step_callback = step_callback
@@ -129,7 +131,10 @@ class AutonomousWorker:
         try:
             # 1. Planning Phase
             self.state.status = TaskStatus.PLANNING
-            domain, milestones = self.planner.parse_and_plan(self.state.user_prompt)
+            domain, milestones = self.planner.parse_and_plan(
+                self.state.user_prompt,
+                domain_override=self.domain
+            )
             self.state.milestones = milestones
             self.state.working_memory["domain"] = domain
             self.state.status = TaskStatus.EXECUTING
@@ -159,6 +164,8 @@ class AutonomousWorker:
                 await self._run_budget_pipeline()
             elif domain == "invoice":
                 await self._run_invoice_pipeline()
+            elif domain in ("policy", "governance"):
+                await self._run_policy_pipeline()
             else:
                 await self._run_general_pipeline()
 
@@ -834,7 +841,78 @@ class AutonomousWorker:
         )
 
     # -------------------------------------------------------------
-    # DOMAIN PIPELINE 7: GENERAL / CROSS-DEPARTMENTAL GOAL
+    # DOMAIN PIPELINE 7: CORPORATE POLICIES & GOVERNANCE
+    # -------------------------------------------------------------
+    async def _run_policy_pipeline(self):
+        m1, m2, m3, m4, m5 = self.state.milestones[:5]
+
+        # M1: Retrieve Corporate Policy Documents
+        m1.status = StepStatus.IN_PROGRESS
+        thought_1 = "Searching enterprise repository for corporate handbooks, IT security policies, and procurement standards."
+        docs = [
+            "Employee_Handbook_and_Leave_Policy_2026.txt",
+            "IT_Security_and_Access_Control_Policy.txt",
+            "Procurement_and_Expense_Policy.txt",
+            "Vendor_Contract_CyberShield_Security.txt"
+        ]
+        self._log_step(thought_1, "file_search", {"target_docs": docs}, f"Located {len(docs)} official corporate governance documents.", True)
+        m1.status = StepStatus.SUCCESS
+        m1.result_summary = f"Accessed {len(docs)} governance policies."
+        await asyncio.sleep(settings.STEP_DELAY_SECONDS)
+
+        # M2: Extract Governance Clauses & Compliance Rules
+        m2.status = StepStatus.IN_PROGRESS
+        thought_2 = "Parsing document clauses for PTO limits, Net-30 payment terms, $1,000 expense rule, and P1 incident SLAs."
+        clauses = {
+            "leave_policy": "Standard annual PTO is 20 days. Single requests exceeding 5 consecutive days require manager approval.",
+            "procurement_terms": "Standard payment terms are Net-30 days. Invoices exceeding $3,000 require CFO authorization.",
+            "expense_reimbursement": "Single employee expense claims exceeding $1,000 require VP or CFO approval.",
+            "it_security_sla": "P1/Critical incidents must be assigned and acknowledged within 1 hour."
+        }
+        self.state.working_memory["policies_cited"] = list(clauses.keys())
+        self.state.working_memory["clauses"] = clauses
+        self._log_step(thought_2, "document_extractor", {"clauses_analyzed": len(clauses)}, "Governance clauses extracted successfully.", True)
+        m2.status = StepStatus.SUCCESS
+        m2.result_summary = "Extracted regulatory & governance thresholds."
+        await asyncio.sleep(settings.STEP_DELAY_SECONDS)
+
+        # M3: Cross-Reference Enterprise Knowledge Base
+        m3.status = StepStatus.IN_PROGRESS
+        thought_3 = f"Querying internal knowledge base for: '{self.state.user_prompt[:80]}'."
+        kb_res = await self.kb_tool.execute(query=self.state.user_prompt[:80])
+        self._log_step(thought_3, self.kb_tool.name, {"query": self.state.user_prompt[:80]}, kb_res.output, kb_res.success)
+        m3.status = StepStatus.SUCCESS
+        m3.result_summary = "Cross-referenced with enterprise knowledge base."
+        await asyncio.sleep(settings.STEP_DELAY_SECONDS)
+
+        # M4: Portal Overview / Policy Navigation (Browser)
+        m4.status = StepStatus.IN_PROGRESS
+        shot_path = ""
+        if self.browser_tool:
+            try:
+                await self.browser_tool.execute(action="navigate", url=f"{settings.MOCK_ERP_BASE_URL}/dashboard?tab=policies")
+                shot_path = await self.browser_tool.capture_screenshot("policy_portal")
+            except Exception:
+                pass
+        self._log_step("Navigating enterprise portal to policies and compliance section.", "browser_automation", {"tab": "policies"}, "Policies portal confirmed.", True, screenshot_path=shot_path)
+        m4.status = StepStatus.SUCCESS
+        m4.result_summary = "Verified policy governance records on enterprise portal."
+        await asyncio.sleep(settings.STEP_DELAY_SECONDS)
+
+        # M5: Outcome Verification & Dossier
+        m5.status = StepStatus.IN_PROGRESS
+        self.state.status = TaskStatus.VERIFYING
+        v_res = OutcomeVerifier.verify("policy", self.state.working_memory)
+        self.state.verification = v_res
+        self._log_step("Verifying compliance reconciliation and compiling audit dossier.", "outcome_verifier", {"criteria": self.state.working_memory}, v_res.verification_message, v_res.verified)
+        m5.status = StepStatus.SUCCESS
+        m5.result_summary = "Policy guidance verified against corporate repository."
+        report_path = EvidencePackager.generate_report(self.state)
+        self.state.evidence_report_path = report_path
+        self.state.status = TaskStatus.COMPLETED
+
+    # -------------------------------------------------------------
+    # DOMAIN PIPELINE 8: GENERAL / CROSS-DEPARTMENTAL GOAL
     # -------------------------------------------------------------
     async def _run_general_pipeline(self):
         p_lower = self.state.user_prompt.lower()

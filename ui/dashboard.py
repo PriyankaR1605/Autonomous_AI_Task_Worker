@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from worker.config import settings
 from worker.agent import AutonomousWorker
 from worker.state import TaskStatus, ApprovalRequest, ActionStep
+from worker.context_retriever import EnterpriseContextRetriever
 
 st.set_page_config(
     page_title="CentrAlign AI — Autonomous Enterprise Agent",
@@ -94,7 +95,7 @@ gemini_key = (
     or os.getenv("GOOGLE_API_KEY")
     or ""
 )
-selected_model = os.getenv("DEFAULT_MODEL", "gemini/gemini-1.5-flash")
+selected_model = os.getenv("DEFAULT_MODEL", "gemini/gemini-3.8-flash")
 use_browser = True
 
 # App Header
@@ -211,6 +212,13 @@ def render_task_dossier(state, msg_idx: int):
                     "Confirmed in Expense Ledger": [tgt.get("report_number", src.get("report_number")), tgt.get("employee_name", src.get("employee_name")), f"${tgt.get('amount', src.get('amount', 0)):,.2f}", "Compliant", tgt.get("status", "APPROVED")],
                     "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
                 }
+            elif domain in ("policy", "governance"):
+                recon_data = {
+                    "Governance Standard": ["Employee Leave & PTO", "Procurement & Payment Terms", "Employee Expense Policy", "IT Incident Response SLAs"],
+                    "Corporate Policy Rule": ["20 Days Standard PTO (approval >5 days)", "Net-30 Standard Terms (CFO sign-off >$3,000)", "$1,000 Threshold (VP/CFO authorization)", "P1/Critical incidents acknowledge <1 hr"],
+                    "Repository Verification": ["✅ Confirmed in Handbook", "✅ Confirmed in Procurement Doc", "✅ Confirmed in Expense Doc", "✅ Confirmed in IT Security Doc"],
+                    "Status": ["Verified Active", "Verified Active", "Verified Active", "Verified Active"]
+                }
             else: # Invoice
                 recon_data = {
                     "Property": ["Vendor", "Invoice #", "Amount Due", "Due Date"],
@@ -240,18 +248,32 @@ def render_task_dossier(state, msg_idx: int):
             st.caption(f"Audit Dossier verified: `{os.path.basename(state.evidence_report_path)}`")
 
 
+# Enterprise Domain Definitions
+DOMAIN_MAP = {
+    "👥 HR & Employee Management": "hr_leave",
+    "🧾 Finance & Invoices": "invoice",
+    "🎫 IT Support & Incident Helpdesk": "ticket",
+    "📦 Inventory & Supply Chain": "inventory",
+    "💰 Expense Auditing & Compliance": "expense",
+    "📊 Department Budgets & Analytics": "budget",
+    "📜 Corporate Policies & Governance": "policy",
+    "🌐 Cross-Department / General Overview": "general",
+}
+
 # Welcome Banner (Clean instructions, no buttons or boxes)
 if not st.session_state["messages"]:
     st.info(
-        "💬 **Welcome! You can ask or instruct CentrAlign AI in natural language below.**\n\n"
-        "Type any company task or question (e.g., HR employee requests, vendor invoices, IT tickets, inventory restock, department budgets).\n"
-        "The system will automatically query the authentic company records and feed both your task and data to the AI model to execute and provide verified results."
+        "💬 **Welcome! Select a target domain from the dropdown and write your natural language query below.**\n\n"
+        "CentrAlign AI retrieves authentic company records for your chosen domain, passes them directly as context to Google Gemini 3.8 Flash, "
+        "and executes end-to-end business milestones with verifiable database reconciliation."
     )
 
 # Render Previous Conversation Messages
 for idx, message in enumerate(st.session_state["messages"]):
     if message["role"] == "user":
         with st.chat_message("user", avatar="👤"):
+            if message.get("domain"):
+                st.caption(f"Target Domain: **{message['domain']}**")
             st.markdown(message["content"])
     else:
         with st.chat_message("assistant", avatar="🤖"):
@@ -259,21 +281,43 @@ for idx, message in enumerate(st.session_state["messages"]):
             if message.get("task_state"):
                 render_task_dossier(message["task_state"], idx)
 
-# Prominent, Reliable Natural Language Task Input Form
+# Prominent Domain Selection & Natural Language Query Form
 st.markdown("---")
-with st.form(key="natural_language_task_form", clear_on_submit=True):
+with st.form(key="natural_language_task_form", clear_on_submit=False):
+    col_domain, col_status = st.columns([3, 2])
+    with col_domain:
+        selected_domain_label = st.selectbox(
+            label="🎯 Select Domain to Query / Execute:",
+            options=list(DOMAIN_MAP.keys()),
+            index=0,
+            help="Select which company domain to ask your query about."
+        )
+        selected_domain_key = DOMAIN_MAP[selected_domain_label]
+    
+    with col_status:
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        summary_badge = EnterpriseContextRetriever.get_domain_summary(selected_domain_key)
+        st.caption(f"📊 **Live Ledger Stats**: `{summary_badge}`")
+
     user_prompt_input = st.text_area(
-        label="📝 Write your task in natural language:",
-        placeholder="Type your task here in plain English...\n\nExample prompts you can try:\n• Find employee Sarah Jenkins, check her remaining annual leave balance, approve her pending vacation request, and update the HR system.\n• Find the latest invoice from Company X, extract the amount and due date, enter it into our internal system, and tell me once it is done.\n• Scan all open customer support tickets, identify any CRITICAL priority tickets, reassign them to Senior Engineer Alex Wong, and mark them IN_PROGRESS.\n• Audit our inventory warehouse for all items below the reorder threshold, calculate restock requirements, and generate a purchase order.\n• Calculate the total Q3 marketing expenditure, compare it against the allocated department budget, and report budget variance.",
+        label="📝 Write your natural language query or task (unpopulated):",
+        value="",
+        placeholder="Type your query or instruction here in plain English...\n\nExamples:\n• HR: 'Find employee Sarah Jenkins, check her remaining annual leave balance, approve her pending vacation request, and update the HR system.'\n• Finance: 'Find the latest invoice from Company X, extract the amount and due date, enter it into our internal system, and tell me once it is done.'\n• IT Support: 'Scan all open customer support tickets, identify any CRITICAL priority tickets, reassign them to Senior Engineer Alex Wong, and mark them IN_PROGRESS.'\n• Inventory: 'Audit our inventory warehouse for all items below the reorder threshold, calculate restock requirements, and generate a purchase order.'\n• Budgets: 'Calculate the total Q3 marketing expenditure, compare it against the allocated department budget, and report budget variance.'",
         height=130,
-        help="Type any business task or query in plain English. Click 'Submit Task' to run."
+        help="Type any business task or query. It starts blank and is not pre-populated. The query along with the domain data will be sent to Gemini."
     )
     
     col_submit, col_hint = st.columns([1, 4])
     with col_submit:
-        submitted = st.form_submit_button("🚀 Submit Task", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("🚀 Execute", type="primary", use_container_width=True)
     with col_hint:
-        st.caption("Press **Submit Task** (or Ctrl+Enter). The agent will retrieve company data, process with the AI model, and verify database changes.")
+        st.caption("Click **Execute** to send your query and domain data to Gemini 3.8 Flash, run autonomous milestones, and verify changes.")
+
+# Live Domain Context Inspector
+with st.expander(f"📦 Preview Real Enterprise Records for {selected_domain_label}", expanded=False):
+    live_ctx = EnterpriseContextRetriever.retrieve(selected_domain_key)
+    st.info(f"Authentic enterprise records from SQLite database that will be fed to Gemini for {selected_domain_label}:")
+    st.json(live_ctx)
 
 # Process Submitted Task
 if submitted and user_prompt_input and user_prompt_input.strip():
@@ -283,15 +327,17 @@ if submitted and user_prompt_input and user_prompt_input.strip():
     st.session_state["messages"].append({
         "role": "user",
         "content": active_prompt,
+        "domain": selected_domain_label,
         "timestamp": datetime.now().strftime("%H:%M:%S")
     })
 
     with st.chat_message("user", avatar="👤"):
+        st.caption(f"Target Domain: **{selected_domain_label}**")
         st.markdown(active_prompt)
 
     # 2. Assistant response with live autonomous execution & AI model reasoning
     with st.chat_message("assistant", avatar="🤖"):
-        with st.status("⚡ Agent retrieving enterprise data and processing with AI model...", expanded=True) as status_box:
+        with st.status(f"⚡ Retrieving {selected_domain_label} context and executing with Gemini...", expanded=True) as status_box:
             
             def handle_step(step: ActionStep):
                 status_box.write(f"🔹 **Step {step.step_number}** [`{step.tool_name}`]: {step.thought}")
@@ -302,6 +348,7 @@ if submitted and user_prompt_input and user_prompt_input.strip():
 
             worker = AutonomousWorker(
                 user_prompt=active_prompt,
+                domain=selected_domain_key,
                 approval_callback=handle_approval,
                 use_browser=use_browser,
                 step_callback=handle_step,

@@ -136,13 +136,15 @@ python run_mock_erp.py
 
 ### 4. Run the Autonomous Worker (Terminal 2)
 
-#### Option A: Interactive Streamlit AI Chatbot
+#### Option A: Interactive Streamlit AI Assistant (Recommended)
 ```powershell
 streamlit run ui/dashboard.py
 ```
-- **Live Cloud AI Chatbot**: [https://autonomous-ai-task-worker.onrender.com/](https://autonomous-ai-task-worker.onrender.com/)
-- **Local Sandbox**: `http://localhost:8501`
-- Conversational chatbot interface with quick action starters, real-time reasoning logs, visual proof screenshots, persistent conversation history, and live verification tables.
+- **Local Application URL**: `http://localhost:8501`
+- **Domain Selection Dropdown**: Choose between 8 enterprise departments (`Finance & Invoices`, `HR & Employee Management`, `IT Support & Helpdesk`, `Inventory & Supply Chain`, `Expense Auditing`, `Budgets & Analytics`, `Corporate Policies & Governance`, or `General Overview`).
+- **Unpopulated Query Box**: Starts clean and unpopulated (`value=""`) so you can enter any custom business query.
+- **Context Injection**: Clicking **🚀 Execute** automatically loads authentic company records and governance docs from that domain into Google Gemini (`gemini-3.8-flash` / `gemini-3.1-flash-lite`).
+- **Autonomous Multi-Tool Execution**: Breaks the query into milestones, executes browser/DB/API/analytics tools, self-heals errors, verifies database updates independently, and renders reconciliation matrices and downloadable audit evidence dossiers.
 
 #### Option B: Command Line Interface (CLI)
 Run any task across any department:

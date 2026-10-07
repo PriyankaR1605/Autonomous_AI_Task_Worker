@@ -69,17 +69,26 @@ async def run_all_enterprise_domain_tests():
             "expected_domain": "budget",
             "verify_key": "department",
             "verify_val": "Marketing & Growth"
+        },
+        {
+            "domain": "CORPORATE POLICIES & GOVERNANCE",
+            "prompt": "What are the official vacation and leave approval rules for employees?",
+            "explicit_domain": "policy",
+            "expected_domain": "policy",
+            "verify_key": "policies_cited",
+            "verify_val": None
         }
     ]
 
     passed_count = 0
 
     for idx, tc in enumerate(test_cases, 1):
-        print(f"\n[{idx}/6] TESTING DOMAIN: {tc['domain']}")
+        print(f"\n[{idx}/{len(test_cases)}] TESTING DOMAIN: {tc['domain']}")
         print(f"Goal: \"{tc['prompt']}\"")
         
         worker = AutonomousWorker(
             user_prompt=tc["prompt"],
+            domain=tc.get("explicit_domain"),
             use_browser=False  # Headless API/DB pathway for CI speed
         )
 
