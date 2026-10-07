@@ -280,8 +280,8 @@ class TaskPlanner:
                 )
             ]
 
-        # Domain F: Commercial Invoice Processing (Default / Standard)
-        else:
+        # Domain F: Commercial Invoice Processing
+        elif any(w in p_lower for w in ("invoice", "bill", "payable", "vendor", "acme", "company x", "company y", "global cloud", "extract", "due date")) or ("amount" in p_lower and "enter" in p_lower):
             domain = "invoice"
             vendor_match = re.search(r'(?:from|for)\s+([A-Za-z0-9\s]+?)(?:,|\.|\sand|\sextract|\senter|$)', prompt, re.IGNORECASE)
             vendor = vendor_match.group(1).strip() if vendor_match else "Company X"
@@ -315,6 +315,30 @@ class TaskPlanner:
                     id=5,
                     title="Outcome Verification & Evidence Generation",
                     description="Independently assert that the ERP ledger matches the source document and compile evidence.",
+                    status=StepStatus.PENDING
+                )
+            ]
+
+        # Domain G: General Inquiries, Greetings & Corporate Knowledge
+        else:
+            domain = "general"
+            return domain, [
+                Milestone(
+                    id=1,
+                    title="Analyze Instruction & Retrieve Context",
+                    description="Evaluate user instruction against corporate knowledge base and enterprise data.",
+                    status=StepStatus.PENDING
+                ),
+                Milestone(
+                    id=2,
+                    title="Synthesize Contextual Information",
+                    description="Aggregate relevant company data to formulate accurate response.",
+                    status=StepStatus.PENDING
+                ),
+                Milestone(
+                    id=3,
+                    title="Formulate Verified Outcome",
+                    description="Compile response and verify consistency with company policies.",
                     status=StepStatus.PENDING
                 )
             ]

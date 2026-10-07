@@ -30,7 +30,8 @@ class AutonomousWorker:
         self,
         user_prompt: str,
         approval_callback: Optional[Callable[[ApprovalRequest], bool]] = None,
-        use_browser: bool = True
+        use_browser: bool = True,
+        step_callback: Optional[Callable[[ActionStep], None]] = None
     ):
         self.state = AgentState(
             task_id=f"TASK-{uuid.uuid4().hex[:8].upper()}",
@@ -38,6 +39,7 @@ class AutonomousWorker:
         )
         self.approval_callback = approval_callback
         self.use_browser = use_browser
+        self.step_callback = step_callback
 
         # Initialize Enterprise Tool Suite
         self.planner = TaskPlanner()
@@ -71,6 +73,11 @@ class AutonomousWorker:
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
         self.state.steps_history.append(step)
+        if self.step_callback:
+            try:
+                self.step_callback(step)
+            except Exception:
+                pass
         return step
 
     async def _handle_hitl_approval(self, approval_req: ApprovalRequest, milestone: Any) -> bool:
@@ -793,12 +800,28 @@ class AutonomousWorker:
     # DOMAIN PIPELINE 7: GENERAL / CROSS-DEPARTMENTAL GOAL
     # -------------------------------------------------------------
     async def _run_general_pipeline(self):
+        p_lower = self.state.user_prompt.lower()
+        is_greeting = any(w in p_lower for w in ("hello", "hi", "hey", "who are you", "what can you do", "help", "capabilities"))
+
         for m in self.state.milestones:
             m.status = StepStatus.IN_PROGRESS
             thought = f"Autonomous Worker reasoning on Milestone {m.id}: {m.title} — {m.description}"
-            # Attempt knowledge or database lookup
-            res = await self.kb_tool.execute(query=self.state.user_prompt[:50])
-            self._log_step(thought, self.kb_tool.name, {"query": self.state.user_prompt[:50]}, res.output, res.success)
+            
+            if is_greeting:
+                res_output = (
+                    "CentrAlign AI Assistant is online and operational. Ready to execute workflows across:\n"
+                    "• Invoices & Accounts Payable (extract PDF, safety gate, ERP entry)\n"
+                    "• HR & Staff Management (profile lookups, leave/vacation approval)\n"
+                    "• IT Support Helpdesk (incident prioritization & engineer reassignment)\n"
+                    "• Warehouse Inventory (low-stock audit & purchase order creation)\n"
+                    "• Expense Policy Compliance (audit claims against travel/procurement policy)\n"
+                    "• Department Budgets & Analytics (variance, burn rate & spend tracking)"
+                )
+                self._log_step(thought, "enterprise_assistant", {"intent": "capabilities_overview"}, res_output, True)
+            else:
+                res = await self.kb_tool.execute(query=self.state.user_prompt[:80])
+                self._log_step(thought, self.kb_tool.name, {"query": self.state.user_prompt[:80]}, res.output, res.success)
+            
             m.status = StepStatus.SUCCESS
             m.result_summary = f"Milestone {m.id} completed."
             await asyncio.sleep(settings.STEP_DELAY_SECONDS)
@@ -807,4 +830,18 @@ class AutonomousWorker:
         report_path = EvidencePackager.generate_report(self.state)
         self.state.evidence_report_path = report_path
         self.state.status = TaskStatus.COMPLETED
-        self.state.final_summary = f"Completed autonomous execution for instruction: '{self.state.user_prompt}'. Evidence Dossier compiled at: {report_path}"
+
+        if is_greeting:
+            self.state.final_summary = (
+                "👋 Hello! I am **CentrAlign AI**, your autonomous enterprise task assistant.\n\n"
+                "I can execute real business actions across our company systems:\n"
+                "1. **🧾 Invoices**: Locate vendor invoices, extract data, check approval limits, and register them.\n"
+                "2. **👥 HR & Leave**: Check employee leave balances and approve pending vacation requests.\n"
+                "3. **🎫 IT Helpdesk**: Scan tickets, identify critical incidents, and reassign engineers.\n"
+                "4. **📦 Inventory**: Audit stock levels below threshold and generate purchase orders.\n"
+                "5. **💰 Expenses**: Audit employee claims against company travel & procurement policy.\n"
+                "6. **📊 Budgets**: Calculate department spend, burn rates, and budget variance.\n\n"
+                "What would you like me to do for you today?"
+            )
+        else:
+            self.state.final_summary = f"Completed autonomous execution for instruction: '{self.state.user_prompt}'. Evidence Dossier compiled at: {report_path}"

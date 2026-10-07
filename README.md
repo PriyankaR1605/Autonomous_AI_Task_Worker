@@ -133,13 +133,13 @@ python run_mock_erp.py
 
 ### 4. Run the Autonomous Worker (Terminal 2)
 
-#### Option A: Interactive Streamlit UI
+#### Option A: Interactive Streamlit AI Chatbot
 ```powershell
 streamlit run ui/dashboard.py
 ```
-- **Live Cloud AI Console**: [https://autonomous-ai-task-worker.onrender.com/](https://autonomous-ai-task-worker.onrender.com/)
+- **Live Cloud AI Chatbot**: [https://autonomous-ai-task-worker.onrender.com/](https://autonomous-ai-task-worker.onrender.com/)
 - **Local Sandbox**: `http://localhost:8501`
-- Includes pre-configured presets for all departments, real-time reasoning logs, visual proof screenshots, persistent session results, and live verification tables.
+- Conversational chatbot interface with quick action starters, real-time reasoning logs, visual proof screenshots, persistent conversation history, and live verification tables.
 
 #### Option B: Command Line Interface (CLI)
 Run any task across any department:
