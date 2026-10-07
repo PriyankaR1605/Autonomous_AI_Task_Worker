@@ -138,7 +138,11 @@ with tab_worker:
     with col_info:
         st.caption("The AI worker will decompose your end goal, invoke necessary tools (Files, DB, Browser, API, Knowledge Base), self-heal if issues arise, check safety guardrails, verify the database, and compile auditable evidence.")
 
-    # Execution Trace
+    # Ensure session state persistence for task execution
+    if "task_state" not in st.session_state:
+        st.session_state["task_state"] = None
+
+    # Execution Trigger
     if run_btn:
         st.divider()
         status_container = st.container()
@@ -168,105 +172,110 @@ with tab_worker:
             try:
                 state = asyncio.run(worker.run())
                 progress_bar.progress(100, text="Task Finished!")
-
-                # Display Milestones Status
-                num_milestones = len(state.milestones)
-                if num_milestones > 0:
-                    cols = st.columns(num_milestones)
-                    for idx, m in enumerate(state.milestones):
-                        with cols[idx]:
-                            if m.status.value == "SUCCESS":
-                                st.success(f"**Step {m.id}**\n{m.title}")
-                            elif m.status.value == "FAILED":
-                                st.error(f"**Step {m.id}**\n{m.title}")
-                            else:
-                                st.info(f"**Step {m.id}**\n{m.title}")
-
-                # Display Execution Logs
-                with log_placeholder.container():
-                    for step in state.steps_history:
-                        st.markdown(f"**Step {step.step_number}: `{step.tool_name}`** (`{step.timestamp}`)")
-                        st.markdown(f"> *Reasoning:* {step.thought}")
-                        st.code(step.tool_output, language="text")
-                        if step.screenshot_path and os.path.exists(step.screenshot_path):
-                            st.image(step.screenshot_path, caption=f"Visual Proof: {os.path.basename(step.screenshot_path)}", width=680)
-                        st.write("---")
-
-                # Final Completion Summary & Verification Dossier
-                st.divider()
-                st.header("📋 Execution Dossier & Outcome Verification")
-                
-                res_col1, res_col2 = st.columns([1, 1])
-
-                with res_col1:
-                    st.subheader("Executive Summary")
-                    if state.status == TaskStatus.COMPLETED:
-                        st.success(state.final_summary)
-                    else:
-                        st.error(state.final_summary)
-
-                    if state.verification:
-                        st.subheader("Data Integrity Reconciliation Matrix")
-                        src = state.verification.source_values
-                        tgt = state.verification.target_values
-                        domain = state.working_memory.get("domain", "general").lower()
-
-                        if domain == "ticket":
-                            recon_data = {
-                                "Property": ["Ticket ID", "Subject", "Priority", "Assignee", "Status"],
-                                "Target / Expected": [src.get("ticket_number") or src.get("target_ticket"), src.get("subject"), src.get("priority"), src.get("expected_assignee"), src.get("expected_status")],
-                                "Confirmed in ITSM Database": [tgt.get("ticket_number"), tgt.get("subject"), tgt.get("priority"), tgt.get("assignee"), tgt.get("status")],
-                                "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
-                            }
-                        elif domain in ("hr_leave", "leave"):
-                            recon_data = {
-                                "Property": ["Employee", "Leave Request ID", "Days Requested", "Approval Status", "Remaining Balance"],
-                                "Target / Expected": [src.get("employee_name"), src.get("req_code"), f"{src.get('days_requested')} days", "APPROVED", f"{src.get('updated_leave_balance')} days"],
-                                "Confirmed in HR Database": [tgt.get("emp_name"), tgt.get("req_code"), f"{tgt.get('days_requested')} days", tgt.get("status"), f"{src.get('updated_leave_balance')} days"],
-                                "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
-                            }
-                        elif domain in ("inventory", "po"):
-                            recon_data = {
-                                "Property": ["PO Number", "Supplier", "Items Summary", "Total Valuation", "Status"],
-                                "Target / Expected": [src.get("po_number"), src.get("supplier"), src.get("items_summary"), f"${src.get('total_cost', 0):,.2f}", "ISSUED"],
-                                "Confirmed in Procurement Ledger": [tgt.get("po_number"), tgt.get("supplier"), tgt.get("items_summary"), f"${tgt.get('total_cost', 0):,.2f}", tgt.get("status")],
-                                "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
-                            }
-                        elif domain == "budget":
-                            recon_data = {
-                                "Property": ["Department", "Allocated Q3 Budget", "Actual Spend", "Variance Status"],
-                                "Target / Expected": [src.get("department"), f"${src.get('budget', 0):,.2f}", f"${src.get('spent', 0):,.2f}", src.get("variance_status", "Calculated")],
-                                "Confirmed in Financial Ledger": [tgt.get("name"), f"${tgt.get('budget_q3', 0):,.2f}", f"${tgt.get('spent_q3', 0):,.2f}", f"${tgt.get('budget_q3', 0) - tgt.get('spent_q3', 0):,.2f} Surplus"],
-                                "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
-                            }
-                        else: # Invoice
-                            recon_data = {
-                                "Property": ["Vendor", "Invoice #", "Amount Due", "Due Date"],
-                                "Extracted from Document": [src.get("vendor_name"), src.get("invoice_number"), f"${src.get('amount', 0):,.2f}" if src.get('amount') else 'N/A', src.get("due_date")],
-                                "Confirmed in ERP Ledger": [tgt.get("vendor_name"), tgt.get("invoice_number"), f"${tgt.get('amount', 0):,.2f}" if tgt.get('amount') else 'N/A', tgt.get("due_date")],
-                                "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
-                            }
-                        st.table(recon_data)
-
-                with res_col2:
-                    st.subheader("Auditable Evidence Dossier")
-                    if state.evidence_report_path and os.path.exists(state.evidence_report_path):
-                        with open(state.evidence_report_path, "r", encoding="utf-8") as f:
-                            report_content = f.read()
-                        
-                        st.download_button(
-                            label="📥 Download Markdown Audit Report",
-                            data=report_content,
-                            file_name=os.path.basename(state.evidence_report_path),
-                            mime="text/markdown"
-                        )
-                        
-                        st.text_area("Audit Report Preview", value=report_content, height=350)
-
+                st.session_state["task_state"] = state
             except Exception as e:
                 st.error(f"Execution Error: {str(e)}")
                 import traceback
                 st.code(traceback.format_exc())
+
+    # Persistent Display of Execution Results
+    state = st.session_state.get("task_state")
+    if state:
+        st.divider()
+        st.subheader("⚡ Completed Task Results")
+
+        # Display Milestones Status
+        num_milestones = len(state.milestones)
+        if num_milestones > 0:
+            cols = st.columns(num_milestones)
+            for idx, m in enumerate(state.milestones):
+                with cols[idx]:
+                    if m.status.value == "SUCCESS":
+                        st.success(f"**Step {m.id}**\n{m.title}")
+                    elif m.status.value == "FAILED":
+                        st.error(f"**Step {m.id}**\n{m.title}")
+                    else:
+                        st.info(f"**Step {m.id}**\n{m.title}")
+
+        # Display Execution Logs
+        with st.expander("🔍 Real-time Reasoning & Tool Observations", expanded=True):
+            for step in state.steps_history:
+                st.markdown(f"**Step {step.step_number}: `{step.tool_name}`** (`{step.timestamp}`)")
+                st.markdown(f"> *Reasoning:* {step.thought}")
+                st.code(step.tool_output, language="text")
+                if step.screenshot_path and os.path.exists(step.screenshot_path):
+                    st.image(step.screenshot_path, caption=f"Visual Proof: {os.path.basename(step.screenshot_path)}", width=680)
+                st.write("---")
+
+        # Final Completion Summary & Verification Dossier
+        st.header("📋 Execution Dossier & Outcome Verification")
+        
+        res_col1, res_col2 = st.columns([1, 1])
+
+        with res_col1:
+            st.subheader("Executive Summary")
+            if state.status == TaskStatus.COMPLETED:
+                st.success(state.final_summary)
+            else:
+                st.error(state.final_summary)
+
+            if state.verification:
+                st.subheader("Data Integrity Reconciliation Matrix")
+                src = state.verification.source_values
+                tgt = state.verification.target_values
+                domain = state.working_memory.get("domain", "general").lower()
+
+                if domain == "ticket":
+                    recon_data = {
+                        "Property": ["Ticket ID", "Subject", "Priority", "Assignee", "Status"],
+                        "Target / Expected": [src.get("ticket_number") or src.get("target_ticket"), src.get("subject"), src.get("priority"), src.get("expected_assignee"), src.get("expected_status")],
+                        "Confirmed in ITSM Database": [tgt.get("ticket_number"), tgt.get("subject"), tgt.get("priority"), tgt.get("assignee"), tgt.get("status")],
+                        "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
+                    }
+                elif domain in ("hr_leave", "leave"):
+                    recon_data = {
+                        "Property": ["Employee", "Leave Request ID", "Days Requested", "Approval Status", "Remaining Balance"],
+                        "Target / Expected": [src.get("employee_name"), src.get("req_code"), f"{src.get('days_requested')} days", "APPROVED", f"{src.get('updated_leave_balance')} days"],
+                        "Confirmed in HR Database": [tgt.get("emp_name"), tgt.get("req_code"), f"{tgt.get('days_requested')} days", tgt.get("status"), f"{src.get('updated_leave_balance')} days"],
+                        "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
+                    }
+                elif domain in ("inventory", "po"):
+                    recon_data = {
+                        "Property": ["PO Number", "Supplier", "Items Summary", "Total Valuation", "Status"],
+                        "Target / Expected": [src.get("po_number"), src.get("supplier"), src.get("items_summary"), f"${src.get('total_cost', 0):,.2f}", "ISSUED"],
+                        "Confirmed in Procurement Ledger": [tgt.get("po_number"), tgt.get("supplier"), tgt.get("items_summary"), f"${tgt.get('total_cost', 0):,.2f}", tgt.get("status")],
+                        "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
+                    }
+                elif domain == "budget":
+                    recon_data = {
+                        "Property": ["Department", "Allocated Q3 Budget", "Actual Spend", "Variance Status"],
+                        "Target / Expected": [src.get("department"), f"${src.get('budget', 0):,.2f}", f"${src.get('spent', 0):,.2f}", src.get("variance_status", "Calculated")],
+                        "Confirmed in Financial Ledger": [tgt.get("name"), f"${tgt.get('budget_q3', 0):,.2f}", f"${tgt.get('spent_q3', 0):,.2f}", f"${tgt.get('budget_q3', 0) - tgt.get('spent_q3', 0):,.2f} Surplus"],
+                        "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
+                    }
+                else: # Invoice
+                    recon_data = {
+                        "Property": ["Vendor", "Invoice #", "Amount Due", "Due Date"],
+                        "Extracted from Document": [src.get("vendor_name"), src.get("invoice_number"), f"${src.get('amount', 0):,.2f}" if src.get('amount') else 'N/A', src.get("due_date")],
+                        "Confirmed in ERP Ledger": [tgt.get("vendor_name"), tgt.get("invoice_number"), f"${tgt.get('amount', 0):,.2f}" if tgt.get('amount') else 'N/A', tgt.get("due_date")],
+                        "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
+                    }
+                st.table(recon_data)
+
+        with res_col2:
+            st.subheader("Auditable Evidence Dossier")
+            if state.evidence_report_path and os.path.exists(state.evidence_report_path):
+                with open(state.evidence_report_path, "r", encoding="utf-8") as f:
+                    report_content = f.read()
+                
+                st.download_button(
+                    label="📥 Download Markdown Audit Report",
+                    data=report_content,
+                    file_name=os.path.basename(state.evidence_report_path),
+                    mime="text/markdown"
+                )
+                
+                st.text_area("Audit Report Preview", value=report_content, height=350)
 
 with tab_explorer:
     st.subheader("🏢 Live Enterprise Database Explorer")
