@@ -14,12 +14,20 @@ from worker.state import TaskStatus, ApprovalRequest, ActionStep
 st.set_page_config(
     page_title="CentrAlign AI — Autonomous Enterprise Agent",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# Custom Styling for modern Chatbot experience
+# Custom Styling for modern Chatbot experience (Sidebar completely removed)
 st.markdown("""
 <style>
+    /* Completely hide Streamlit sidebar and toggle button */
+    [data-testid="stSidebar"], section[data-testid="stSidebar"] {
+        display: none !important;
+    }
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
     .chat-header {
         display: flex;
         align-items: center;
@@ -64,132 +72,53 @@ st.markdown("""
         font-size: 0.8rem;
         font-weight: 600;
     }
-    .model-tag {
-        background-color: #EEF2FF;
-        color: #4338CA;
-        border: 1px solid #C7D2FE;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
     .stChatMessage {
         border-radius: 12px;
+        margin-bottom: 12px;
+    }
+    .task-input-box {
+        background-color: #F8FAFC;
+        border: 1px solid #CBD5E1;
+        border-radius: 10px;
+        padding: 16px;
+        margin-top: 15px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Preset Enterprise Tasks for Quick Selection
-PRESET_PROMPTS = {
-    "👥 Query & Approve HR Leave": "Find employee Sarah Jenkins, check her remaining annual leave balance, approve her pending vacation request, and update the HR system.",
-    "🧾 Extract & Process Invoice": "Find the latest invoice from Company X, extract the amount and due date, enter it into our internal system, and tell me once it is done.",
-    "🎫 IT Ticket Priority Triage": "Scan all open customer support tickets, identify any CRITICAL priority tickets, reassign them to Senior Engineer Alex Wong, and mark them IN_PROGRESS.",
-    "📦 Low Stock Inventory Audit": "Audit our inventory warehouse for all items below the reorder threshold, calculate restock requirements, and generate a purchase order to the preferred supplier.",
-    "💰 Expense Compliance Audit": "Audit recent employee expense reports against our company travel and procurement policy, flag any unapproved expenses over $1,000, and request approval.",
-    "📊 Q3 Marketing Budget Analytics": "Calculate the total Q3 marketing expenditure, compare it against the allocated department budget, and report budget variance."
-}
-
-# Sidebar: AI Model Configuration & Controls
-with st.sidebar:
-    st.header("🔑 AI Model & Gemini API")
-    
-    # API Key Input
-    initial_key = st.session_state.get("gemini_api_key") or settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
-    gemini_key = st.text_input(
-        "Gemini API Key",
-        value=initial_key,
-        type="password",
-        help="Provide your Google Gemini API key to process real enterprise tasks via Gemini. If empty, runs via the built-in Local Intelligence Engine."
-    )
-    if gemini_key:
-        st.session_state["gemini_api_key"] = gemini_key
-        settings.GEMINI_API_KEY = gemini_key
-
-    model_options = [
-        "gemini/gemini-1.5-flash",
-        "gemini/gemini-2.0-flash",
-        "gemini/gemini-1.5-pro",
-        "openai/gpt-4o-mini"
-    ]
-    selected_model = st.selectbox(
-        "Model Provider",
-        options=model_options,
-        index=0,
-        help="Select the AI model that will process your enterprise data."
-    )
-
-    if gemini_key:
-        st.markdown('<span class="status-badge-active">🟢 Gemini Connected</span>', unsafe_allow_html=True)
-    else:
-        st.markdown('<span class="status-badge-local">🟡 Local Engine (Enter Gemini Key)</span>', unsafe_allow_html=True)
-
-    st.divider()
-    st.header("⚙️ Agent Controls")
-    
-    use_browser = st.toggle(
-        "Enable Browser Automation", 
-        value=True, 
-        help="Executes internal UI operations & captures visual verification proof"
-    )
-    headless_opt = st.toggle(
-        "Run Browser Headless", 
-        value=settings.HEADLESS_BROWSER, 
-        help="Execute browser tasks without showing external GUI window"
-    )
-    settings.HEADLESS_BROWSER = headless_opt
-
-    high_risk_limit = st.number_input(
-        "Human Approval Threshold ($)",
-        min_value=500.0,
-        max_value=20000.0,
-        value=settings.HIGH_RISK_AMOUNT_THRESHOLD,
-        step=500.0,
-        help="Transactions exceeding this value trigger safety human-in-the-loop sign-off"
-    )
-    settings.HIGH_RISK_AMOUNT_THRESHOLD = high_risk_limit
-
-    pace_delay = st.slider(
-        "Execution Pace (seconds/step)",
-        min_value=0.5,
-        max_value=4.0,
-        value=1.0,
-        step=0.5,
-        help="Delay between milestones to observe the agent reasoning in real time"
-    )
-    settings.STEP_DELAY_SECONDS = pace_delay
-
-    st.divider()
-    st.subheader("💡 Quick Prompts")
-    st.caption("Click any enterprise workflow to instantly feed real data & task to the AI:")
-    
-    for label, prompt_text in PRESET_PROMPTS.items():
-        if st.button(label, use_container_width=True):
-            st.session_state["queued_prompt"] = prompt_text
-            st.rerun()
-
-    st.divider()
-    if st.button("🗑️ Clear Chat History", type="secondary", use_container_width=True):
-        st.session_state["messages"] = []
-        st.rerun()
+# AI Model & Agent Runtime Configuration
+gemini_key = (
+    st.session_state.get("gemini_api_key")
+    or settings.GEMINI_API_KEY
+    or os.getenv("GEMINI_API_KEY")
+    or os.getenv("GOOGLE_API_KEY")
+    or ""
+)
+selected_model = os.getenv("DEFAULT_MODEL", "gemini/gemini-1.5-flash")
+use_browser = True
 
 # App Header
-header_col1, header_col2 = st.columns([4, 1])
+header_col1, header_col2 = st.columns([3, 1])
 with header_col1:
     st.markdown("""
     <div class="chat-header">
         <div>
             <div class="chat-header-title">🤖 CentrAlign AI Enterprise Assistant</div>
-            <div class="chat-header-desc">Natural language task executor & intelligence engine fed with authentic company records across Finance, HR, IT Support, Inventory, Budgets & Compliance.</div>
+            <div class="chat-header-desc">Natural language enterprise agent — executes business tasks across Finance, HR, IT Support, Inventory, Budgets & Compliance using authentic company data.</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 with header_col2:
     badge_html = '<span class="status-badge-active">● Online & Ready</span>' if gemini_key else '<span class="status-badge-local">● Local Engine</span>'
     st.markdown(f"""
-    <div style="text-align: right; padding-top: 10px;">
+    <div style="text-align: right; padding-top: 6px; margin-bottom: 6px;">
         {badge_html}
     </div>
     """, unsafe_allow_html=True)
+    if st.session_state.get("messages"):
+        if st.button("🗑️ Clear Chat History", type="secondary", use_container_width=True):
+            st.session_state["messages"] = []
+            st.rerun()
 
 # Initialize Session State Messages
 if "messages" not in st.session_state:
@@ -311,36 +240,13 @@ def render_task_dossier(state, msg_idx: int):
             st.caption(f"Audit Dossier verified: `{os.path.basename(state.evidence_report_path)}`")
 
 
-# Render Welcome Screen if No Messages Yet
+# Welcome Banner (Clean instructions, no buttons or boxes)
 if not st.session_state["messages"]:
     st.info(
-        "👋 **Welcome to CentrAlign AI Enterprise Assistant!**\n\n"
-        "Ask any task or business query in natural language. The agent will retrieve the authentic enterprise data (HR directory, invoices, support tickets, inventory, budgets) and supply both your task and data to the AI model to process and formulate verified results.\n\n"
-        "**Try one of these quick starters below, or enter your own request:**"
+        "💬 **Welcome! You can ask or instruct CentrAlign AI in natural language below.**\n\n"
+        "Type any company task or question (e.g., HR employee requests, vendor invoices, IT tickets, inventory restock, department budgets).\n"
+        "The system will automatically query the authentic company records and feed both your task and data to the AI model to execute and provide verified results."
     )
-
-    w_col1, w_col2, w_col3 = st.columns(3)
-    with w_col1:
-        if st.button("👥 Approve Sarah Jenkins Vacation", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["👥 Query & Approve HR Leave"]
-            st.rerun()
-        if st.button("🧾 Process Invoice from Company X", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["🧾 Extract & Process Invoice"]
-            st.rerun()
-    with w_col2:
-        if st.button("🎫 Reassign Critical Support Tickets", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["🎫 IT Ticket Priority Triage"]
-            st.rerun()
-        if st.button("📦 Audit & Restock Low Inventory", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["📦 Low Stock Inventory Audit"]
-            st.rerun()
-    with w_col3:
-        if st.button("💰 Audit Employee Expense Reports", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["💰 Expense Compliance Audit"]
-            st.rerun()
-        if st.button("📊 Marketing Q3 Budget Variance", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["📊 Q3 Marketing Budget Analytics"]
-            st.rerun()
 
 # Render Previous Conversation Messages
 for idx, message in enumerate(st.session_state["messages"]):
@@ -353,21 +259,33 @@ for idx, message in enumerate(st.session_state["messages"]):
             if message.get("task_state"):
                 render_task_dossier(message["task_state"], idx)
 
-# Check for queued prompt or new user input
-active_prompt = None
-if "queued_prompt" in st.session_state and st.session_state["queued_prompt"]:
-    active_prompt = st.session_state.pop("queued_prompt")
-else:
-    active_prompt = st.chat_input("Ask CentrAlign AI to perform an enterprise task or query company records...")
+# Prominent, Reliable Natural Language Task Input Form
+st.markdown("---")
+with st.form(key="natural_language_task_form", clear_on_submit=True):
+    user_prompt_input = st.text_area(
+        label="📝 Write your task in natural language:",
+        placeholder="Type your task here in plain English...\n\nExample prompts you can try:\n• Find employee Sarah Jenkins, check her remaining annual leave balance, approve her pending vacation request, and update the HR system.\n• Find the latest invoice from Company X, extract the amount and due date, enter it into our internal system, and tell me once it is done.\n• Scan all open customer support tickets, identify any CRITICAL priority tickets, reassign them to Senior Engineer Alex Wong, and mark them IN_PROGRESS.\n• Audit our inventory warehouse for all items below the reorder threshold, calculate restock requirements, and generate a purchase order.\n• Calculate the total Q3 marketing expenditure, compare it against the allocated department budget, and report budget variance.",
+        height=130,
+        help="Type any business task or query in plain English. Click 'Submit Task' to run."
+    )
+    
+    col_submit, col_hint = st.columns([1, 4])
+    with col_submit:
+        submitted = st.form_submit_button("🚀 Submit Task", type="primary", use_container_width=True)
+    with col_hint:
+        st.caption("Press **Submit Task** (or Ctrl+Enter). The agent will retrieve company data, process with the AI model, and verify database changes.")
 
-# Process New Message
-if active_prompt:
+# Process Submitted Task
+if submitted and user_prompt_input and user_prompt_input.strip():
+    active_prompt = user_prompt_input.strip()
+
     # 1. Record and display user message
     st.session_state["messages"].append({
         "role": "user",
         "content": active_prompt,
         "timestamp": datetime.now().strftime("%H:%M:%S")
     })
+
     with st.chat_message("user", avatar="👤"):
         st.markdown(active_prompt)
 
@@ -422,3 +340,6 @@ if active_prompt:
                 "task_state": None,
                 "timestamp": datetime.now().strftime("%H:%M:%S")
             })
+
+    # Refresh page so new conversation is displayed cleanly
+    st.rerun()

@@ -166,7 +166,7 @@ Your duties:
                     f"- **Approval Status:** **APPROVED** (Policy Compliance Verified)\n"
                     f"- **Updated Remaining Balance:** **{bal_after} days**\n\n"
                     f"✅ **Database Confirmation:** The employee record and leave ledger have been updated and reconciled in the HR database.\n\n"
-                    f"*(💡 Note: Enter your Gemini API Key in the sidebar to process arbitrary HR prompts with live Gemini 1.5/2.0 Flash!)*"
+                    f"*(💡 Note: Configure GEMINI_API_KEY in your environment (.env) to process arbitrary HR prompts with live Gemini 1.5/2.0 Flash!)*"
                 )
 
         # Domain B: Commercial Invoices & AP
@@ -187,7 +187,7 @@ Your duties:
                 f"- **Corporate Guardrail Check:** Amount (${amt:,.2f}) assessed against safety threshold.\n"
                 f"- **Registration Status:** **REGISTERED** in Internal Accounts Payable ERP.\n"
                 f"- **Ledger Verification:** Reconciled with 0 discrepancies against document source.\n\n"
-                f"*(💡 Note: Enter your Gemini API Key in the sidebar to process arbitrary invoice prompts with live Gemini 1.5/2.0 Flash!)*"
+                f"*(💡 Note: Configure GEMINI_API_KEY in your environment (.env) to process arbitrary invoice prompts with live Gemini 1.5/2.0 Flash!)*"
             )
 
         # Domain C: IT Support & Tickets
@@ -205,7 +205,7 @@ Your duties:
                 f"- **Assigned Engineer:** **{assignee}** (Senior Systems Engineer)\n"
                 f"- **Incident Status:** **{status}**\n\n"
                 f"✅ **Ledger Confirmation:** Ticket reassignment has been confirmed and persisted in the ITSM database.\n\n"
-                f"*(💡 Note: Enter your Gemini API Key in the sidebar to triage IT tickets with live Gemini 1.5/2.0 Flash!)*"
+                f"*(💡 Note: Configure GEMINI_API_KEY in your environment (.env) to triage IT tickets with live Gemini 1.5/2.0 Flash!)*"
             )
 
         # Domain D: Inventory & Restock
@@ -224,7 +224,7 @@ Your duties:
                 f"- **Preferred Supplier:** **{supplier}**\n"
                 f"- **Total PO Valuation:** **${total:,.2f} USD**\n"
                 f"- **Order Status:** **ISSUED** in Procurement Ledger\n\n"
-                f"*(💡 Note: Enter your Gemini API Key in the sidebar to generate custom supply orders with live Gemini 1.5/2.0 Flash!)*"
+                f"*(💡 Note: Configure GEMINI_API_KEY in your environment (.env) to generate custom supply orders with live Gemini 1.5/2.0 Flash!)*"
             )
 
         # Domain E: Expense Compliance
@@ -241,7 +241,7 @@ Your duties:
                 f"- **Claim Amount:** ${amt:,.2f} USD\n"
                 f"- **Policy Threshold:** $1,000 corporate procurement limit triggered.\n"
                 f"- **Approval Decision:** **AUTHORIZED & VERIFIED** under travel policy.\n\n"
-                f"*(💡 Note: Enter your Gemini API Key in the sidebar to audit custom expense claims with live Gemini 1.5/2.0 Flash!)*"
+                f"*(💡 Note: Configure GEMINI_API_KEY in your environment (.env) to audit custom expense claims with live Gemini 1.5/2.0 Flash!)*"
             )
 
         # Domain F: Budgets & Analytics
@@ -258,7 +258,7 @@ Your duties:
                 f"- **Actual Expenditure Incurred:** ${spent:,.2f} USD\n"
                 f"- **Net Variance:** **${var:,.2f} USD SURPLUS**\n"
                 f"- **Budget Utilization:** 85.0% (Operating within healthy fiscal limits)\n\n"
-                f"*(💡 Note: Enter your Gemini API Key in the sidebar for custom fiscal analytics with live Gemini 1.5/2.0 Flash!)*"
+                f"*(💡 Note: Configure GEMINI_API_KEY in your environment (.env) for custom fiscal analytics with live Gemini 1.5/2.0 Flash!)*"
             )
 
         # General Overview
@@ -268,5 +268,5 @@ Your duties:
                 f"**Processed Instruction:** '{task_instruction}'\n\n"
                 f"- Evaluated enterprise records and governance policies across 7 company divisions.\n"
                 f"- Operations verified and logged in the enterprise audit ledger.\n\n"
-                f"*(💡 Tip: Enter your Gemini API Key in the sidebar to enable full open-ended generative responses across all company data!)*"
+                f"*(💡 Tip: Configure GEMINI_API_KEY in your environment (.env) to enable full open-ended generative responses across all company data!)*"
             )
