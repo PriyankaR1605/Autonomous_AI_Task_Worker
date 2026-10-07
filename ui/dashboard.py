@@ -48,8 +48,6 @@ def get_dynamic_portal_url(path: str = "dashboard") -> str:
 
 portal_dashboard_url = get_dynamic_portal_url("dashboard")
 portal_login_url = get_dynamic_portal_url("login")
-relative_dashboard_path = "/dashboard"
-relative_login_path = "/login"
 
 # Custom Styling
 st.markdown("""
@@ -79,12 +77,8 @@ with st.sidebar:
     
     st.divider()
     st.subheader("🏢 Enterprise Environment")
-    st.link_button("🌐 Open Mock ERP Dashboard", portal_dashboard_url, use_container_width=True)
-    st.markdown(f"**Dashboard Route**: [`{relative_dashboard_path}`]({portal_dashboard_url})")
-    st.markdown(f"**Full URL**: [{portal_dashboard_url}]({portal_dashboard_url})")
-    st.markdown(f"**Login Route**: [`{relative_login_path}`]({portal_login_url})")
+    st.link_button("🌐 Open Enterprise Portal", portal_dashboard_url, use_container_width=True)
     st.markdown("**Credentials**: `admin` / `company_secure_pass`")
-    st.caption("Routes are relative to https://autonomous-ai-task-worker.onrender.com")
     
     st.divider()
     st.subheader("🛡️ Safety Guardrails")
@@ -276,7 +270,7 @@ with tab_worker:
 
 with tab_explorer:
     st.subheader("🏢 Live Enterprise Database Explorer")
-    st.markdown(f"Direct live view of CentrAlign Technologies records. You can also view the full Tailwind web app at: [`/dashboard`]({portal_dashboard_url}) ({portal_dashboard_url})")
+    st.markdown(f"Direct live view of CentrAlign Technologies records. You can also view the full Tailwind web app at: [{portal_dashboard_url}]({portal_dashboard_url})")
     
     exp_invoices = get_all_invoices()
     exp_employees = get_all_employees()
