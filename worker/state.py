@@ -76,6 +76,11 @@ class AgentState(BaseModel):
     # Independent outcome verification
     verification: Optional[VerificationResult] = None
     
+    # AI Model & Enterprise Context
+    retrieved_data: Optional[Dict[str, Any]] = None
+    ai_response: Optional[str] = None
+    model_used: Optional[str] = None
+
     # Final output
     final_summary: Optional[str] = None
     evidence_report_path: Optional[str] = None

@@ -40,7 +40,7 @@ st.markdown("""
         font-size: 0.95rem;
         margin-top: 2px;
     }
-    .status-badge {
+    .status-badge-active {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -52,13 +52,26 @@ st.markdown("""
         font-size: 0.8rem;
         font-weight: 600;
     }
-    .quick-card {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 8px;
-        transition: all 0.15s ease;
+    .status-badge-local {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background-color: #FEF3C7;
+        color: #92400E;
+        border: 1px solid #FDE68A;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .model-tag {
+        background-color: #EEF2FF;
+        color: #4338CA;
+        border: 1px solid #C7D2FE;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
     }
     .stChatMessage {
         border-radius: 12px;
@@ -66,36 +79,51 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# App Header
-header_col1, header_col2 = st.columns([4, 1])
-with header_col1:
-    st.markdown("""
-    <div class="chat-header">
-        <div>
-            <div class="chat-header-title">🤖 CentrAlign AI Assistant</div>
-            <div class="chat-header-desc">Goal-oriented autonomous enterprise agent executing operations across Finance, HR, IT Support, Inventory, Budgets & Compliance.</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-with header_col2:
-    st.markdown("""
-    <div style="text-align: right; padding-top: 10px;">
-        <span class="status-badge">● Online & Ready</span>
-    </div>
-    """, unsafe_allow_html=True)
-
 # Preset Enterprise Tasks for Quick Selection
 PRESET_PROMPTS = {
-    "🧾 Process Latest Invoice": "Find the latest invoice from Company X, extract the amount and due date, enter it into our internal system, and tell me once it is done.",
-    "👥 Approve HR Vacation Leave": "Find employee Sarah Jenkins, check her remaining annual leave balance, approve her pending vacation request, and update the HR system.",
-    "🎫 Reassign Priority IT Tickets": "Scan all open customer support tickets, identify any CRITICAL priority tickets, reassign them to Senior Engineer Alex Wong, and mark them IN_PROGRESS.",
-    "📦 Restock Low Inventory": "Audit our inventory warehouse for all items below the reorder threshold, calculate restock requirements, and generate a purchase order to the preferred supplier.",
-    "💰 Audit Expense Compliance": "Audit recent employee expense reports against our company travel and procurement policy, flag any unapproved expenses over $1,000, and request approval.",
-    "📊 Calculate Department Budget": "Calculate the total Q3 marketing expenditure, compare it against the allocated department budget, and report budget variance."
+    "👥 Query & Approve HR Leave": "Find employee Sarah Jenkins, check her remaining annual leave balance, approve her pending vacation request, and update the HR system.",
+    "🧾 Extract & Process Invoice": "Find the latest invoice from Company X, extract the amount and due date, enter it into our internal system, and tell me once it is done.",
+    "🎫 IT Ticket Priority Triage": "Scan all open customer support tickets, identify any CRITICAL priority tickets, reassign them to Senior Engineer Alex Wong, and mark them IN_PROGRESS.",
+    "📦 Low Stock Inventory Audit": "Audit our inventory warehouse for all items below the reorder threshold, calculate restock requirements, and generate a purchase order to the preferred supplier.",
+    "💰 Expense Compliance Audit": "Audit recent employee expense reports against our company travel and procurement policy, flag any unapproved expenses over $1,000, and request approval.",
+    "📊 Q3 Marketing Budget Analytics": "Calculate the total Q3 marketing expenditure, compare it against the allocated department budget, and report budget variance."
 }
 
-# Sidebar: Controls & Quick Prompts
+# Sidebar: AI Model Configuration & Controls
 with st.sidebar:
+    st.header("🔑 AI Model & Gemini API")
+    
+    # API Key Input
+    initial_key = st.session_state.get("gemini_api_key") or settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
+    gemini_key = st.text_input(
+        "Gemini API Key",
+        value=initial_key,
+        type="password",
+        help="Provide your Google Gemini API key to process real enterprise tasks via Gemini. If empty, runs via the built-in Local Intelligence Engine."
+    )
+    if gemini_key:
+        st.session_state["gemini_api_key"] = gemini_key
+        settings.GEMINI_API_KEY = gemini_key
+
+    model_options = [
+        "gemini/gemini-1.5-flash",
+        "gemini/gemini-2.0-flash",
+        "gemini/gemini-1.5-pro",
+        "openai/gpt-4o-mini"
+    ]
+    selected_model = st.selectbox(
+        "Model Provider",
+        options=model_options,
+        index=0,
+        help="Select the AI model that will process your enterprise data."
+    )
+
+    if gemini_key:
+        st.markdown('<span class="status-badge-active">🟢 Gemini Connected</span>', unsafe_allow_html=True)
+    else:
+        st.markdown('<span class="status-badge-local">🟡 Local Engine (Enter Gemini Key)</span>', unsafe_allow_html=True)
+
+    st.divider()
     st.header("⚙️ Agent Controls")
     
     use_browser = st.toggle(
@@ -132,7 +160,7 @@ with st.sidebar:
 
     st.divider()
     st.subheader("💡 Quick Prompts")
-    st.caption("Click any enterprise workflow to instantly send it to the chatbot:")
+    st.caption("Click any enterprise workflow to instantly feed real data & task to the AI:")
     
     for label, prompt_text in PRESET_PROMPTS.items():
         if st.button(label, use_container_width=True):
@@ -144,16 +172,45 @@ with st.sidebar:
         st.session_state["messages"] = []
         st.rerun()
 
+# App Header
+header_col1, header_col2 = st.columns([4, 1])
+with header_col1:
+    st.markdown("""
+    <div class="chat-header">
+        <div>
+            <div class="chat-header-title">🤖 CentrAlign AI Enterprise Assistant</div>
+            <div class="chat-header-desc">Natural language task executor & intelligence engine fed with authentic company records across Finance, HR, IT Support, Inventory, Budgets & Compliance.</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+with header_col2:
+    badge_html = '<span class="status-badge-active">● Online & Ready</span>' if gemini_key else '<span class="status-badge-local">● Local Engine</span>'
+    st.markdown(f"""
+    <div style="text-align: right; padding-top: 10px;">
+        {badge_html}
+    </div>
+    """, unsafe_allow_html=True)
+
 # Initialize Session State Messages
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
 def render_task_dossier(state, msg_idx: int):
-    """Renders milestones, execution logs, visual evidence, and reconciliation for a completed task."""
+    """Renders authentic enterprise data sent to AI, milestones, logs, and reconciliation."""
     if not state:
         return
 
-    # 1. Milestone Status Badges
+    # Metadata Tag
+    st.caption(f"⚡ Processing Engine: **{state.model_used or 'CentrAlign Local Intelligence Engine'}** | Task ID: `{state.task_id}`")
+
+    # 1. Authentic Enterprise Data Supplied to AI Model
+    if state.retrieved_data:
+        domain_label = state.retrieved_data.get("domain", "Domain Ledger")
+        with st.expander(f"📦 Real Enterprise Data Supplied to AI Model ({domain_label})", expanded=False):
+            st.info(f"Authentic company records extracted from database and supplied directly to {state.model_used or 'the AI model'}:")
+            st.json(state.retrieved_data)
+
+    # 2. Milestone Status Badges
     if state.milestones:
         num_m = len(state.milestones)
         cols = st.columns(num_m)
@@ -166,7 +223,7 @@ def render_task_dossier(state, msg_idx: int):
                 else:
                     st.info(f"**Step {m.id}**\n{m.title}")
 
-    # 2. Detailed Execution Log & Visual Proof
+    # 3. Detailed Execution Log & Visual Proof
     if state.steps_history:
         with st.expander("🔍 Agent Reasoning & Tool Execution Trace", expanded=False):
             for step in state.steps_history:
@@ -182,7 +239,7 @@ def render_task_dossier(state, msg_idx: int):
                     )
                 st.write("---")
 
-    # 3. Outcome Verification Matrix
+    # 4. Outcome Verification Matrix
     if state.verification:
         with st.expander("📊 Data Integrity Reconciliation Matrix", expanded=True):
             src = state.verification.source_values
@@ -236,7 +293,7 @@ def render_task_dossier(state, msg_idx: int):
             if recon_data:
                 st.table(recon_data)
 
-    # 4. Evidence Dossier Report Download
+    # 5. Evidence Dossier Report Download
     if state.evidence_report_path and os.path.exists(state.evidence_report_path):
         with open(state.evidence_report_path, "r", encoding="utf-8") as f:
             report_text = f.read()
@@ -257,33 +314,32 @@ def render_task_dossier(state, msg_idx: int):
 # Render Welcome Screen if No Messages Yet
 if not st.session_state["messages"]:
     st.info(
-        "👋 **Welcome to CentrAlign AI Chat!**\n\n"
-        "I am an autonomous enterprise assistant that can execute real business tasks across company data.\n"
-        "Ask me to process invoices, approve HR leaves, reassign support tickets, audit inventory, inspect budgets, or review compliance policies.\n\n"
-        "**Try one of these quick starters below, or type your own request:**"
+        "👋 **Welcome to CentrAlign AI Enterprise Assistant!**\n\n"
+        "Ask any task or business query in natural language. The agent will retrieve the authentic enterprise data (HR directory, invoices, support tickets, inventory, budgets) and supply both your task and data to the AI model to process and formulate verified results.\n\n"
+        "**Try one of these quick starters below, or enter your own request:**"
     )
 
     w_col1, w_col2, w_col3 = st.columns(3)
     with w_col1:
-        if st.button("🧾 Process Invoice from Company X", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["🧾 Process Latest Invoice"]
+        if st.button("👥 Approve Sarah Jenkins Vacation", use_container_width=True):
+            st.session_state["queued_prompt"] = PRESET_PROMPTS["👥 Query & Approve HR Leave"]
             st.rerun()
-        if st.button("📦 Audit & Restock Low Inventory", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["📦 Restock Low Inventory"]
+        if st.button("🧾 Process Invoice from Company X", use_container_width=True):
+            st.session_state["queued_prompt"] = PRESET_PROMPTS["🧾 Extract & Process Invoice"]
             st.rerun()
     with w_col2:
-        if st.button("👥 Approve Sarah Jenkins Vacation", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["👥 Approve HR Vacation Leave"]
+        if st.button("🎫 Reassign Critical Support Tickets", use_container_width=True):
+            st.session_state["queued_prompt"] = PRESET_PROMPTS["🎫 IT Ticket Priority Triage"]
             st.rerun()
-        if st.button("💰 Audit Employee Expense Reports", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["💰 Audit Expense Compliance"]
+        if st.button("📦 Audit & Restock Low Inventory", use_container_width=True):
+            st.session_state["queued_prompt"] = PRESET_PROMPTS["📦 Low Stock Inventory Audit"]
             st.rerun()
     with w_col3:
-        if st.button("🎫 Reassign Critical Support Tickets", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["🎫 Reassign Priority IT Tickets"]
+        if st.button("💰 Audit Employee Expense Reports", use_container_width=True):
+            st.session_state["queued_prompt"] = PRESET_PROMPTS["💰 Expense Compliance Audit"]
             st.rerun()
         if st.button("📊 Marketing Q3 Budget Variance", use_container_width=True):
-            st.session_state["queued_prompt"] = PRESET_PROMPTS["📊 Calculate Department Budget"]
+            st.session_state["queued_prompt"] = PRESET_PROMPTS["📊 Q3 Marketing Budget Analytics"]
             st.rerun()
 
 # Render Previous Conversation Messages
@@ -302,7 +358,7 @@ active_prompt = None
 if "queued_prompt" in st.session_state and st.session_state["queued_prompt"]:
     active_prompt = st.session_state.pop("queued_prompt")
 else:
-    active_prompt = st.chat_input("Ask CentrAlign AI to perform an enterprise task or query data...")
+    active_prompt = st.chat_input("Ask CentrAlign AI to perform an enterprise task or query company records...")
 
 # Process New Message
 if active_prompt:
@@ -315,9 +371,9 @@ if active_prompt:
     with st.chat_message("user", avatar="👤"):
         st.markdown(active_prompt)
 
-    # 2. Assistant response with live autonomous execution
+    # 2. Assistant response with live autonomous execution & AI model reasoning
     with st.chat_message("assistant", avatar="🤖"):
-        with st.status("⚡ Autonomous agent analyzing intent and formulating plan...", expanded=True) as status_box:
+        with st.status("⚡ Agent retrieving enterprise data and processing with AI model...", expanded=True) as status_box:
             
             def handle_step(step: ActionStep):
                 status_box.write(f"🔹 **Step {step.step_number}** [`{step.tool_name}`]: {step.thought}")
@@ -330,13 +386,15 @@ if active_prompt:
                 user_prompt=active_prompt,
                 approval_callback=handle_approval,
                 use_browser=use_browser,
-                step_callback=handle_step
+                step_callback=handle_step,
+                api_key=gemini_key,
+                model_name=selected_model
             )
 
             try:
                 state = asyncio.run(worker.run())
                 if state.status == TaskStatus.COMPLETED:
-                    status_box.update(label="✅ Task successfully executed & verified!", state="complete", expanded=False)
+                    status_box.update(label=f"✅ Processed successfully by {state.model_used or 'AI model'}!", state="complete", expanded=False)
                 else:
                     status_box.update(label=f"⚠️ Execution finished with status: {state.status.value}", state="complete", expanded=False)
             except Exception as e:

@@ -69,6 +69,8 @@ CentrAlign_AI_Project/
 │   └── storage/                     # Screenshots, downloads, and audit dossiers
 ├── worker/                          # Agent cognitive architecture
 │   ├── agent.py                     # Autonomous ReAct orchestrator loop
+│   ├── context_retriever.py         # Domain context retriever (HR, Invoices, Tickets, Inventory, etc.)
+│   ├── ai_engine.py                 # Gemini & LLM processing core with local intelligence fallback
 │   ├── planner.py                   # Intent decomposition into milestones
 │   ├── state.py                     # Pydantic state models & audit trace
 │   ├── approval.py                  # Human-in-the-Loop policy gate
@@ -85,13 +87,14 @@ CentrAlign_AI_Project/
 │       ├── browser_tool.py          # Playwright browser controller
 │       └── erp_api_tool.py          # Internal ERP REST API tool
 ├── ui/
-│   └── dashboard.py                 # Streamlit live monitoring dashboard
+│   └── dashboard.py                 # Conversational Streamlit AI Chatbot & Gemini configuration
 ├── scripts/
 │   ├── generate_company_data.py     # Master company data & document generator
 │   └── generate_sample_invoices.py  # Sample invoice generator
 └── tests/
     ├── test_flow.py                 # E2E Invoice flow integration test
-    └── test_all_domains.py          # Full multi-department test suite
+    ├── test_all_domains.py          # Full multi-department test suite
+    └── test_ai_pipeline.py          # Domain data retrieval & AI engine test
 ```
 
 ---

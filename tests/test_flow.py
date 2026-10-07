@@ -5,6 +5,12 @@ import asyncio
 # Ensure project root is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 from mock_erp.database import init_db, reset_test_records, get_all_invoices, get_connection
 from scripts.generate_sample_invoices import main as generate_invoices
 from worker.agent import AutonomousWorker

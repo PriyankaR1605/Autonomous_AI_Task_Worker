@@ -18,6 +18,8 @@ from worker.tools.erp_api_tool import ErpApiTool
 from worker.tools.enterprise_db_tool import EnterpriseDatabaseTool
 from worker.tools.knowledge_tool import KnowledgeBaseTool
 from worker.tools.analytics_tool import AnalyticsCalculationTool
+from worker.context_retriever import EnterpriseContextRetriever
+from worker.ai_engine import EnterpriseAIEngine
 
 class AutonomousWorker:
     """
@@ -31,7 +33,9 @@ class AutonomousWorker:
         user_prompt: str,
         approval_callback: Optional[Callable[[ApprovalRequest], bool]] = None,
         use_browser: bool = True,
-        step_callback: Optional[Callable[[ActionStep], None]] = None
+        step_callback: Optional[Callable[[ActionStep], None]] = None,
+        api_key: Optional[str] = None,
+        model_name: Optional[str] = None
     ):
         self.state = AgentState(
             task_id=f"TASK-{uuid.uuid4().hex[:8].upper()}",
@@ -40,6 +44,8 @@ class AutonomousWorker:
         self.approval_callback = approval_callback
         self.use_browser = use_browser
         self.step_callback = step_callback
+        self.api_key = api_key or settings.GEMINI_API_KEY
+        self.model_name = model_name or settings.DEFAULT_MODEL
 
         # Initialize Enterprise Tool Suite
         self.planner = TaskPlanner()
@@ -128,7 +134,19 @@ class AutonomousWorker:
             self.state.working_memory["domain"] = domain
             self.state.status = TaskStatus.EXECUTING
 
-            # 2. Domain Execution Dispatcher
+            # 2. Authentic Enterprise Data Gathering Phase
+            # Retrieves authentic company database records and policies to feed to the AI model
+            retrieved = EnterpriseContextRetriever.retrieve(domain, self.state.user_prompt)
+            self.state.retrieved_data = retrieved
+            self._log_step(
+                thought=f"Gathering authentic enterprise data for domain '{domain}' to supply directly to AI model.",
+                tool_name="context_retriever",
+                tool_input={"domain": domain, "prompt": self.state.user_prompt},
+                tool_output=f"Enterprise context compiled successfully ({len(retrieved)} domain attributes: {list(retrieved.keys())}).",
+                success=True
+            )
+
+            # 3. Domain Execution Dispatcher
             if domain == "ticket":
                 await self._run_ticket_pipeline()
             elif domain in ("hr_leave", "leave"):
@@ -143,6 +161,25 @@ class AutonomousWorker:
                 await self._run_invoice_pipeline()
             else:
                 await self._run_general_pipeline()
+
+            # 4. AI Model Processing Phase (Gemini / Generative AI Engine)
+            ai_text, model_used = await EnterpriseAIEngine.process_task(
+                task_instruction=self.state.user_prompt,
+                domain=domain,
+                enterprise_context=self.state.retrieved_data,
+                operational_context=self.state.working_memory,
+                api_key=self.api_key,
+                model_name=self.model_name
+            )
+            self.state.ai_response = ai_text
+            self.state.model_used = model_used
+
+            if ai_text:
+                self.state.final_summary = ai_text
+
+            # Refresh audit dossier with the synthesized AI outcome
+            report_path = EvidencePackager.generate_report(self.state)
+            self.state.evidence_report_path = report_path
 
             return self.state
 
