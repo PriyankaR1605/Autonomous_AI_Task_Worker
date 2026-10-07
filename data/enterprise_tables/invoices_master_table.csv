@@ -1,0 +1,51 @@
+invoice_number,vendor_name,invoice_type,amount,currency,due_date,status,notes,created_at
+INV-CX-2026-904,Company X,PAYABLE,4850.0,USD,2026-11-15,PENDING_APPROVAL,Enterprise SaaS Platform License & Premium SLA (Oct 2026),2026-10-01 08:00:00
+INV-CX-2026-102,Company X,PAYABLE,1200.0,USD,2026-05-25,PAID,Initial System Architecture Onboarding Consulting,2026-04-10 09:30:00
+INV-CY-2026-440,Company Y,PAYABLE,2890.5,USD,2026-10-30,APPROVED,Secure Cold Storage Facility Lease & Logistics,2026-09-18 14:15:00
+INV-ACME-2026-881,Acme Supplies Co,PAYABLE,1650.0,USD,2026-10-25,APPROVED,Ergonomic mesh chairs and monitor arms for Engineering floor,2026-09-25 11:20:00
+INV-GCH-2026-512,Global Cloud Hosting,PAYABLE,2150.0,USD,2026-11-02,APPROVED,High-Memory Kubernetes Compute Cluster & Anycast CDN,2026-10-02 10:00:00
+INV-2026-001,Acme Supplies Co,PAYABLE,1450.5,USD,2026-10-15,APPROVED,Monthly office consumables & paper,2026-09-15 10:30:00
+INV-2026-002,Global Cloud Hosting,PAYABLE,820.0,USD,2026-10-20,PAID,Dedicated server cluster renewal,2026-09-20 14:15:00
+INV-2026-003,Apex Logistics Ltd,PAYABLE,3120.0,USD,2026-11-01,PENDING_APPROVAL,Q3 Freight & customs charges,2026-09-28 09:00:00
+INV-2026-004,CloudScale Networks,PAYABLE,2400.0,USD,2026-10-28,APPROVED,Enterprise SD-WAN interconnects,2026-09-30 11:45:00
+INV-2026-005,CyberShield Security LLC,PAYABLE,7000.0,USD,2026-11-10,PENDING_APPROVAL,Monthly SOC 24/7 SIEM monitoring retainer,2026-10-01 08:30:00
+INV-2026-006,OfficeMax Pro,PAYABLE,530.25,USD,2026-10-25,PAID,Breakroom coffee and pantry stocking,2026-09-22 13:00:00
+INV-AWS-2026-101,Amazon Web Services (AWS),PAYABLE,14250.0,USD,2026-10-31,APPROVED,Production us-east-1 and eu-west-1 cloud compute & Aurora RDS,2026-10-01 00:05:00
+INV-DD-2026-402,Datadog Observability,PAYABLE,3850.0,USD,2026-11-05,PENDING_APPROVAL,APM and distributed tracing agent telemetry tier,2026-10-02 09:10:00
+INV-GH-2026-781,GitHub Enterprise,PAYABLE,2800.0,USD,2026-10-28,PAID,120 developer seats + Copilot Enterprise add-on Q3,2026-09-28 15:30:00
+INV-SLK-2026-099,Slack Technologies / Salesforce,PAYABLE,3150.0,USD,2026-11-04,APPROVED,Enterprise Grid workspace licensing and DLP retention,2026-10-03 10:20:00
+INV-SNOW-2026-311,Snowflake Inc.,PAYABLE,8900.0,USD,2026-11-12,PENDING_APPROVAL,Analytics data warehouse credit consumption for September,2026-10-01 12:00:00
+INV-ZM-2026-880,Zoom Video Communications,PAYABLE,1420.0,USD,2026-10-22,PAID,Corporate Zoom One Business licenses & Zoom Rooms audio,2026-09-22 09:40:00
+INV-TWLO-2026-441,Twilio Telephony,PAYABLE,850.0,USD,2026-11-01,APPROVED,Customer SMS 2FA notification dispatch and voice SIP trunks,2026-10-01 16:15:00
+INV-GCP-2026-620,Google Cloud Platform,PAYABLE,16400.0,USD,2026-11-18,PENDING_APPROVAL,TPU v5e AI training pods & BigQuery storage tier,2026-10-02 08:30:00
+INV-CSCO-2026-512,Cisco Systems Commercial,PAYABLE,5400.0,USD,2026-11-14,APPROVED,SmartNet maintenance contract for San Francisco HQ edge switches,2026-09-30 14:00:00
+INV-PAN-2026-901,Palo Alto Networks,PAYABLE,6800.0,USD,2026-11-20,PENDING_APPROVAL,Prisma Access zero-trust cloud firewall subscriptions,2026-10-03 11:30:00
+INV-WW-2026-204,WeWork Global Enterprise,PAYABLE,6500.0,USD,2026-10-31,PAID,New York and London satellite team touchdown office desks,2026-09-25 10:00:00
+INV-KPMG-2026-701,KPMG Audit & Advisory LLP,PAYABLE,28500.0,USD,2026-11-30,PENDING_APPROVAL,Interim SOC-2 Type II independent certification audit retainer,2026-10-01 17:00:00
+INV-CLY-2026-810,Cooley LLP Corporate Counsel,PAYABLE,18200.0,USD,2026-11-25,PENDING_APPROVAL,Q3 IP patent filing and enterprise SaaS customer terms advisory,2026-10-02 15:45:00
+INV-DELL-2026-309,Dell Enterprise Store,PAYABLE,7250.0,USD,2026-11-10,APPROVED,Batch of 4x Dell XPS 15 developer laptops and Thunderbolt docks,2026-09-28 13:15:00
+INV-APPL-2026-411,Apple Commercial Direct,PAYABLE,11495.0,USD,2026-11-15,PENDING_APPROVAL,5x MacBook Pro 16 M3 Pro 36GB for Data Science team,2026-10-04 10:30:00
+INV-FDX-2026-112,FedEx Corporate Logistics,PAYABLE,420.5,USD,2026-10-20,PAID,Expedited courier shipping for international employee onboarding kits,2026-09-20 16:00:00
+INV-STR-2026-801,Stripe Payments Inc.,PAYABLE,1840.0,USD,2026-10-18,PAID,Monthly billing merchant processing and interchange fees,2026-09-18 10:00:00
+INV-MSFT-2026-992,Microsoft Corporation,PAYABLE,4650.0,USD,2026-11-08,APPROVED,Microsoft 365 E5 enterprise licensing for 250 employees,2026-10-02 14:00:00
+INV-EQX-2026-303,Equinix Data Centers,PAYABLE,9200.0,USD,2026-11-15,PENDING_APPROVAL,"Silicon Valley SV5 datacenter cage power, cooling and cross-connects",2026-10-01 11:30:00
+INV-ORCL-2026-771,Oracle Cloud Infrastructure,PAYABLE,7800.0,USD,2026-11-22,PENDING_APPROVAL,Autonomous Database backup replication vault tier,2026-10-03 13:00:00
+INV-CRWD-2026-442,CrowdStrike Falcon,PAYABLE,6200.0,USD,2026-11-12,APPROVED,Endpoint detection and response (EDR) agent licensing Q4,2026-09-29 16:20:00
+INV-HUBS-2026-110,HubSpot Enterprise,PAYABLE,3400.0,USD,2026-10-29,PAID,Marketing Automation and inbound CRM pipeline sync tier,2026-09-20 09:15:00
+INV-JIRA-2026-551,Atlassian Cloud Services,PAYABLE,2600.0,USD,2026-11-05,APPROVED,Jira Software Premium and Confluence Cloud seats renewal,2026-10-02 17:00:00
+INV-IRON-2026-224,Iron Mountain Secure Shred,PAYABLE,750.0,USD,2026-10-24,PAID,Secure document destruction and offsite tape vaulting,2026-09-24 12:40:00
+INV-CLI-901,Nexus Healthcare Systems,RECEIVABLE,45000.0,USD,2026-11-30,PENDING_APPROVAL,CentrAlign AI Engine enterprise subscription Q4,2026-10-01 09:00:00
+INV-CLI-902,Vertex FinTech Corp,RECEIVABLE,32500.0,USD,2026-10-31,PAID,Custom API integration & onboarding package,2026-09-10 16:30:00
+INV-CLI-903,FinEdge Global Capital,RECEIVABLE,62000.0,USD,2026-12-15,PENDING_APPROVAL,High-Frequency Transaction Intelligence Platform license,2026-10-02 11:00:00
+INV-CLI-904,Quantum Dynamics Logistics,RECEIVABLE,24500.0,USD,2026-11-20,APPROVED,Supply chain optimization worker automation modules,2026-09-28 10:15:00
+INV-CLI-905,OmniMedia Digital Group,RECEIVABLE,18000.0,USD,2026-10-25,PAID,Digital asset classification & search integration license,2026-09-15 14:00:00
+INV-CLI-906,BioHealth Diagnostics,RECEIVABLE,29000.0,USD,2026-11-28,PENDING_APPROVAL,Clinical document automated parser & OCR extraction pipeline,2026-10-03 09:45:00
+INV-CLI-907,Nova Retail Solutions,RECEIVABLE,38500.0,USD,2026-12-05,APPROVED,Omnichannel POS inventory autonomous sync worker setup,2026-10-01 13:20:00
+INV-CLI-908,Vanguard Asset Management,RECEIVABLE,85000.0,USD,2026-12-20,PENDING_APPROVAL,Enterprise Private Cloud CentrAlign instance deployment & SLA,2026-10-04 15:00:00
+INV-CLI-909,Horizon Telecommunications,RECEIVABLE,52000.0,USD,2026-11-15,APPROVED,Automated network outage ticket triage and resolution bot,2026-09-26 11:30:00
+INV-CLI-910,Stellar Mobility Labs,RECEIVABLE,41000.0,USD,2026-12-10,PENDING_APPROVAL,Autonomous fleet dispatch analytics integration package,2026-10-02 16:10:00
+INV-CLI-911,Aether Dynamics Aerospace,RECEIVABLE,95000.0,USD,2026-12-28,PENDING_APPROVAL,Autonomous telemetry parsing and failure prediction agent deployment,2026-10-05 14:00:00
+INV-CLI-912,Pacific Rim Maritime Group,RECEIVABLE,28000.0,USD,2026-11-22,APPROVED,Port container routing and customs document extraction API,2026-09-29 15:30:00
+INV-CLI-913,Crestline Insurance Services,RECEIVABLE,47500.0,USD,2026-12-12,PENDING_APPROVAL,Claims processing adjudication agent workflow pilot,2026-10-03 10:45:00
+INV-CLI-914,Summit Energy Partners,RECEIVABLE,36000.0,USD,2026-11-19,APPROVED,Smart grid substation meter audit data connector package,2026-09-30 08:30:00
+INV-CLI-915,Kodiak Robotics Research,RECEIVABLE,31000.0,USD,2026-12-08,PENDING_APPROVAL,Simulation sensor pipeline ingestion & verification module,2026-10-04 16:20:00

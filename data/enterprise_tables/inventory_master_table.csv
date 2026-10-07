@@ -1,0 +1,26 @@
+sku,item_name,category,stock_on_hand,reorder_threshold,target_reorder_qty,unit_cost,supplier,warehouse_location
+SKU-LAP-M3P,"Apple MacBook Pro 16"" M3 Pro (36GB)",Hardware,4,5,10,2499.0,Apple Enterprise Direct,Aisle 3 - Secure Cage A
+SKU-LAP-DELL,"Dell XPS 15 9530 (i7, 32GB, 1TB)",Hardware,8,4,8,1750.0,Dell Enterprise Store,Aisle 3 - Shelf B
+SKU-MON-4K,"Dell UltraSharp 32"" 4K USB-C Hub Monitor",Peripherals,3,6,12,650.0,Dell Enterprise Store,Aisle 2 - Bay 4
+SKU-NET-SW24,Cisco Catalyst 24-Port Gigabit PoE Switch,Network,2,3,5,1200.0,Cisco Systems,Aisle 1 - Server Room
+SKU-SRV-NV1,NVIDIA RTX 6000 Ada Generation GPU (48GB),Server,1,2,4,6800.0,PNY Commercial,Aisle 1 - High Value Safe
+SKU-ACC-DOCK,CalDigit TS4 Thunderbolt 4 Docking Station,Peripherals,12,5,10,399.0,CalDigit Direct,Aisle 2 - Shelf A
+SKU-OFF-CHAIR,Herman Miller Aeron Chair Size B,Office Supplies,6,4,6,1195.0,Acme Supplies Co,Warehouse Warehouse Floor East
+SKU-OFF-CABLE,Cat6A Shielded Ethernet Cable 10ft (10-Pack),Network,25,10,20,45.0,OfficeMax Pro,Aisle 2 - Bin 12
+SKU-LAP-THINK,Lenovo ThinkPad X1 Carbon Gen 12,Hardware,2,5,8,1820.0,Lenovo Commercial Direct,Aisle 3 - Shelf C
+SKU-MON-27,"LG 27"" UltraFine 4K Ergo Dual Monitor",Peripherals,5,8,10,480.0,Dell Enterprise Store,Aisle 2 - Bay 2
+SKU-NET-FW,Palo Alto PA-440 Next-Gen Hardware Firewall,Network,1,2,2,3200.0,Palo Alto Networks,Aisle 1 - Server Cage
+SKU-SRV-R760,Dell PowerEdge R760 2U Rackmount Server,Server,1,2,2,8450.0,Dell Enterprise Store,Aisle 1 - Server Room
+SKU-KEY-MX,Logitech MX Master 3S + MX Keys Combo,Peripherals,14,8,15,185.0,OfficeMax Pro,Aisle 2 - Bin 4
+SKU-AUD-JABRA,Jabra Evolve2 85 Wireless ANC Headset,Audio/Video,3,6,10,340.0,Acme Supplies Co,Aisle 2 - Shelf D
+SKU-CAM-4K,Logitech Brio 4K Ultra HD Streaming Webcam,Audio/Video,7,5,10,175.0,OfficeMax Pro,Aisle 2 - Bin 8
+SKU-UPS-1500,APC Smart-UPS 1500VA LCD 120V Battery Backup,Power,2,4,6,620.0,Acme Supplies Co,Aisle 1 - Floor Rack
+SKU-SEC-YUBI,Yubico YubiKey 5C NFC Security Key (50-Pack),Security,4,5,10,2100.0,Yubico Direct,Aisle 1 - Safe Box 2
+SKU-TAB-IPAD,"Apple iPad Pro 11"" M4 (256GB Wi-Fi)",Mobile,3,4,5,949.0,Apple Enterprise Direct,Aisle 3 - Shelf A
+SKU-DESK-STAND,Fully Jarvis Motorized Standing Desk 60x30,Office Supplies,4,5,8,780.0,Acme Supplies Co,Warehouse Floor West
+SKU-SSD-2TB,Samsung 990 PRO NVMe M.2 SSD 2TB,Hardware,8,10,20,170.0,Dell Enterprise Store,Aisle 2 - Bin 15
+SKU-SRV-H100,NVIDIA H100 80GB SXM5 AI Accelerator Tensor Core,Server,0,1,2,32000.0,PNY Commercial,Aisle 1 - High Value Safe
+SKU-NET-SFP,Cisco 10GBASE-SR SFP+ Transceiver Module (10-Pack),Network,3,5,10,450.0,Cisco Systems,Aisle 1 - Bin 9
+SKU-PRN-LASER,HP Color LaserJet Enterprise MFP M578dn,Office Supplies,2,2,3,1150.0,OfficeMax Pro,Warehouse Floor North
+SKU-MIC-SHURE,Shure MV7X Podcast & Conference Vocal Mic,Audio/Video,4,4,8,199.0,Acme Supplies Co,Aisle 2 - Shelf E
+SKU-PDU-RACK,Tripp Lite 30A Switched Server Rack PDU,Power,1,2,3,580.0,Acme Supplies Co,Aisle 1 - Floor Rack 2

@@ -1,0 +1,21 @@
+req_code,emp_name,leave_type,start_date,end_date,days_requested,reason,status,approver_notes,created_at
+LV-2026-001,Sarah Jenkins,Annual Vacation,2026-11-20,2026-11-25,4,Family holiday trip to Japan,PENDING,,2026-10-04 09:30:00
+LV-2026-002,Chloe Martin,Sick Leave,2026-09-12,2026-09-13,2,Mild seasonal flu recovery,APPROVED,Approved by Sarah Jenkins,2026-09-11 18:00:00
+LV-2026-003,David Miller,Annual Vacation,2026-12-24,2026-12-31,5,Christmas & New Year break with parents,PENDING,,2026-10-02 14:15:00
+LV-2026-004,Maya Lin,Personal Leave,2026-10-18,2026-10-19,2,Attending sibling graduation ceremony,APPROVED,Approved by Jessica Alba-Ruiz,2026-10-01 11:20:00
+LV-2026-005,Alex Wong,Annual Vacation,2026-11-05,2026-11-09,3,Long weekend camping trip,PENDING,,2026-10-05 10:00:00
+LV-2026-006,Liam O'Connor,Sick Leave,2026-09-20,2026-09-21,1,Dental surgery and recovery,APPROVED,Approved by Alex Wong,2026-09-19 16:30:00
+LV-2026-007,Thomas Becker,Annual Vacation,2026-10-25,2026-10-29,3,Family anniversary trip,PENDING,,2026-10-03 15:45:00
+LV-2026-008,Zoe Chen,Personal Leave,2026-11-12,2026-11-13,2,Home relocation & moving days,PENDING,,2026-10-06 08:30:00
+LV-2026-009,Lucas Rossi,Annual Vacation,2026-12-15,2026-12-22,6,Winter ski trip in Dolomites,PENDING,,2026-10-04 11:15:00
+LV-2026-010,Priya Sharma,Professional Development,2026-11-02,2026-11-04,3,Attending NeurIPS AI conference in Vancouver,APPROVED,Approved by Dr. Aris Thorne,2026-09-28 14:00:00
+LV-2026-011,Brett Henderson,Sick Leave,2026-10-02,2026-10-03,2,Migraine and doctor appointment,APPROVED,Approved by Jessica Alba-Ruiz,2026-10-01 18:20:00
+LV-2026-012,Felix Baum,Annual Vacation,2026-11-16,2026-11-20,5,Autumn countryside wellness retreat,PENDING,,2026-10-05 13:40:00
+LV-2026-013,Nadia Hassan,Personal Leave,2026-10-22,2026-10-23,2,Family wedding celebration,PENDING,,2026-10-06 14:00:00
+LV-2026-014,Carlos Mendoza,Annual Vacation,2026-12-20,2026-12-28,6,Holiday vacation visiting family in Spain,PENDING,,2026-10-05 16:30:00
+LV-2026-015,Daphne Blake,Annual Vacation,2026-11-25,2026-11-28,3,Thanksgiving holiday trip,PENDING,,2026-10-06 11:15:00
+LV-2026-016,Gregory House,Medical Leave,2026-10-14,2026-10-16,3,Specialist medical consult and rest,APPROVED,Approved by Marcus Thorne,2026-10-04 17:00:00
+LV-2026-017,Olivia Taylor,Parental Leave,2026-11-01,2026-11-15,10,Secondary caregiver parental bonding leave,APPROVED,Approved by Elena Vance,2026-09-25 10:30:00
+LV-2026-018,Winston Bishop,Annual Vacation,2026-10-30,2026-11-03,3,Short fall road trip,PENDING,,2026-10-06 09:45:00
+LV-2026-019,Turing Vance,Professional Development,2026-12-08,2026-12-12,4,Presenting research paper at Agentic Systems Summit,APPROVED,Approved by Dr. Aris Thorne,2026-10-01 15:20:00
+LV-2026-020,Hannah Abbott,Sick Leave,2026-10-05,2026-10-06,2,Food poisoning recovery,APPROVED,Approved by Priya Sharma,2026-10-04 20:00:00

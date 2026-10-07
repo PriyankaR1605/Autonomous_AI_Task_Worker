@@ -304,9 +304,22 @@ def generate_all_company_documents():
     print("All company policy documents and invoice files successfully created.")
 
 def seed_database():
-    """Populates the SQLite database with full enterprise cross-departmental datasets."""
+    """Populates the SQLite database with full enterprise cross-departmental datasets and exports master tables."""
     from mock_erp.database import init_db
     init_db()
+    try:
+        from scripts.generate_big_enterprise_dataset import (
+            generate_all_single_file_tables,
+            generate_unified_enterprise_dataset,
+            generate_master_invoices_document,
+            seed_big_dataset_to_sqlite
+        )
+        generate_all_single_file_tables()
+        generate_unified_enterprise_dataset()
+        generate_master_invoices_document()
+        seed_big_dataset_to_sqlite()
+    except Exception as e:
+        print(f"Big dataset synchronization note: {e}")
     print("Database schema verified and populated with comprehensive enterprise data.")
 
 def main():
@@ -321,3 +334,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,0 +1,9 @@
+po_number,supplier,items_summary,total_cost,status,created_at,delivery_expected
+PO-2026-301,Apple Enterprise Direct,"5x MacBook Pro 14"" M3",9995.0,DELIVERED,2026-09-10 10:00:00,2026-09-18
+PO-2026-302,Dell Enterprise Store,"8x Dell UltraSharp 32"" Monitors",5200.0,ISSUED,2026-10-02 11:30:00,2026-10-12
+PO-2026-303,Acme Supplies Co,6x Herman Miller Ergonomic Chairs,7170.0,ISSUED,2026-10-04 15:45:00,2026-10-20
+PO-2026-304,Cisco Systems,2x Cisco Catalyst 24-Port PoE Switch,2400.0,DELIVERED,2026-09-15 09:30:00,2026-09-22
+PO-2026-305,PNY Commercial,1x NVIDIA RTX 6000 Ada GPU,6800.0,IN_TRANSIT,2026-10-01 14:00:00,2026-10-08
+PO-2026-306,OfficeMax Pro,20x Cat6A Shielded Ethernet Cable 10-Packs,900.0,DELIVERED,2026-09-12 11:00:00,2026-09-16
+PO-2026-307,Yubico Direct,5x YubiKey 5C NFC Security Key 50-Packs,10500.0,ISSUED,2026-10-03 13:15:00,2026-10-15
+PO-2026-308,Dell Enterprise Store,2x Dell PowerEdge R760 2U Rackmount Server,16900.0,IN_TRANSIT,2026-09-28 09:00:00,2026-10-10

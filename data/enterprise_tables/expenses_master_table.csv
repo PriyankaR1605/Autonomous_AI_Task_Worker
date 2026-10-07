@@ -1,0 +1,16 @@
+report_number,employee_name,department,category,amount,merchant,expense_date,status,notes,receipt_ref
+EXP-2026-101,Sarah Jenkins,Engineering,Hardware,1250.0,Dell Enterprise Store,2026-09-28,SUBMITTED,4K UltraSharp curved developer monitor,receipt_dell_4k.pdf
+EXP-2026-102,Maya Lin,Sales & Revenue,Travel,890.0,United Airlines,2026-09-24,APPROVED,Roundtrip flight to Chicago for Nexus client pitch,receipt_flight_ord.pdf
+EXP-2026-103,David Sterling,Marketing & Growth,Software,350.0,Canva Enterprise,2026-09-30,APPROVED,Design team collaborative subscription,receipt_canva.pdf
+EXP-2026-104,Alex Wong,IT & Security,Hardware,1850.0,Cisco Systems,2026-10-02,SUBMITTED,Replacement 24-port PoE Gigabit switch,receipt_cisco_poe.pdf
+EXP-2026-105,Chloe Martin,Engineering,Meals & Entertainment,145.5,Piazza D'Angelo,2026-10-03,SUBMITTED,Team sprint retrospective lunch celebration,receipt_lunch.pdf
+EXP-2026-106,Christian Cole,Sales & Revenue,Travel,1450.0,Marriott Downtown Boston,2026-09-29,SUBMITTED,3 nights hotel stay during FinEdge executive summit,receipt_marriott_bos.pdf
+EXP-2026-107,Priya Sharma,Data & AI Research,Training,1800.0,NeurIPS Conference Foundation,2026-10-01,SUBMITTED,Full registration pass and workshop registration fee,receipt_neurips_conf.pdf
+EXP-2026-108,David Miller,Engineering,Software,240.0,JetBrains Commercial,2026-09-15,APPROVED,All Products Pack annual developer renewal,receipt_jetbrains.pdf
+EXP-2026-109,Elena Vance,Human Resources,Meals & Entertainment,320.0,The Cavalier SF,2026-09-22,APPROVED,New executive director candidate recruitment dinner,receipt_dinner_cavalier.pdf
+EXP-2026-110,Liam O'Connor,IT & Security,Hardware,1150.0,B&H Photo Video,2026-10-04,SUBMITTED,Network diagnostic fiber testing kit and OTDR probe,receipt_bh_network.pdf
+EXP-2026-111,Natalie Foster,Marketing & Growth,Advertising,2500.0,LinkedIn Marketing Solutions,2026-10-02,SUBMITTED,Q4 Enterprise AI whitepaper sponsored content campaign,receipt_linkedin_ads.pdf
+EXP-2026-112,Lucas Meyer,Customer Success,Travel,680.0,Delta Air Lines,2026-09-18,APPROVED,Flight to Atlanta for Quantum Dynamics quarterly business review,receipt_delta_atl.pdf
+EXP-2026-113,Daphne Blake,Sales & Revenue,Travel,1320.0,Hyatt Regency Seattle,2026-09-27,SUBMITTED,Onsite proof of concept demo with Vanguard Asset Management,receipt_hyatt_sea.pdf
+EXP-2026-114,Turing Vance,Data & AI Research,Hardware,1950.0,Apple Enterprise Direct,2026-10-02,SUBMITTED,Local development M3 Max test machine allocation,receipt_apple_dev.pdf
+EXP-2026-115,Winston Bishop,Operations & Facilities,Facilities Supplies,450.0,Home Depot Pro,2026-09-26,APPROVED,Server room thermal acoustic insulation barriers,receipt_homedepot.pdf

@@ -1,0 +1,62 @@
+==============================================================================================================
+                       CENTRALIGN TECHNOLOGIES INC. — MASTER INVOICES REGISTER
+                          Comprehensive Accounts Payable & Receivable Ledger
+==============================================================================================================
+Generated: 2026-10-08 01:34:28 | Total Invoices Recorded: 50
+--------------------------------------------------------------------------------------------------------------
+INVOICE #          VENDOR / CLIENT / PERSON         TYPE         AMOUNT (USD)    DUE DATE     STATUS         
+--------------------------------------------------------------------------------------------------------------
+INV-CX-2026-904    Company X                        PAYABLE      $4,850.00       2026-11-15   PENDING_APPROVAL
+INV-CX-2026-102    Company X                        PAYABLE      $1,200.00       2026-05-25   PAID           
+INV-CY-2026-440    Company Y                        PAYABLE      $2,890.50       2026-10-30   APPROVED       
+INV-ACME-2026-881  Acme Supplies Co                 PAYABLE      $1,650.00       2026-10-25   APPROVED       
+INV-GCH-2026-512   Global Cloud Hosting             PAYABLE      $2,150.00       2026-11-02   APPROVED       
+INV-2026-001       Acme Supplies Co                 PAYABLE      $1,450.50       2026-10-15   APPROVED       
+INV-2026-002       Global Cloud Hosting             PAYABLE      $820.00         2026-10-20   PAID           
+INV-2026-003       Apex Logistics Ltd               PAYABLE      $3,120.00       2026-11-01   PENDING_APPROVAL
+INV-2026-004       CloudScale Networks              PAYABLE      $2,400.00       2026-10-28   APPROVED       
+INV-2026-005       CyberShield Security LLC         PAYABLE      $7,000.00       2026-11-10   PENDING_APPROVAL
+INV-2026-006       OfficeMax Pro                    PAYABLE      $530.25         2026-10-25   PAID           
+INV-AWS-2026-101   Amazon Web Services (AWS)        PAYABLE      $14,250.00      2026-10-31   APPROVED       
+INV-DD-2026-402    Datadog Observability            PAYABLE      $3,850.00       2026-11-05   PENDING_APPROVAL
+INV-GH-2026-781    GitHub Enterprise                PAYABLE      $2,800.00       2026-10-28   PAID           
+INV-SLK-2026-099   Slack Technologies / Salesforce  PAYABLE      $3,150.00       2026-11-04   APPROVED       
+INV-SNOW-2026-311  Snowflake Inc.                   PAYABLE      $8,900.00       2026-11-12   PENDING_APPROVAL
+INV-ZM-2026-880    Zoom Video Communications        PAYABLE      $1,420.00       2026-10-22   PAID           
+INV-TWLO-2026-441  Twilio Telephony                 PAYABLE      $850.00         2026-11-01   APPROVED       
+INV-GCP-2026-620   Google Cloud Platform            PAYABLE      $16,400.00      2026-11-18   PENDING_APPROVAL
+INV-CSCO-2026-512  Cisco Systems Commercial         PAYABLE      $5,400.00       2026-11-14   APPROVED       
+INV-PAN-2026-901   Palo Alto Networks               PAYABLE      $6,800.00       2026-11-20   PENDING_APPROVAL
+INV-WW-2026-204    WeWork Global Enterprise         PAYABLE      $6,500.00       2026-10-31   PAID           
+INV-KPMG-2026-701  KPMG Audit & Advisory LLP        PAYABLE      $28,500.00      2026-11-30   PENDING_APPROVAL
+INV-CLY-2026-810   Cooley LLP Corporate Counsel     PAYABLE      $18,200.00      2026-11-25   PENDING_APPROVAL
+INV-DELL-2026-309  Dell Enterprise Store            PAYABLE      $7,250.00       2026-11-10   APPROVED       
+INV-APPL-2026-411  Apple Commercial Direct          PAYABLE      $11,495.00      2026-11-15   PENDING_APPROVAL
+INV-FDX-2026-112   FedEx Corporate Logistics        PAYABLE      $420.50         2026-10-20   PAID           
+INV-STR-2026-801   Stripe Payments Inc.             PAYABLE      $1,840.00       2026-10-18   PAID           
+INV-MSFT-2026-992  Microsoft Corporation            PAYABLE      $4,650.00       2026-11-08   APPROVED       
+INV-EQX-2026-303   Equinix Data Centers             PAYABLE      $9,200.00       2026-11-15   PENDING_APPROVAL
+INV-ORCL-2026-771  Oracle Cloud Infrastructure      PAYABLE      $7,800.00       2026-11-22   PENDING_APPROVAL
+INV-CRWD-2026-442  CrowdStrike Falcon               PAYABLE      $6,200.00       2026-11-12   APPROVED       
+INV-HUBS-2026-110  HubSpot Enterprise               PAYABLE      $3,400.00       2026-10-29   PAID           
+INV-JIRA-2026-551  Atlassian Cloud Services         PAYABLE      $2,600.00       2026-11-05   APPROVED       
+INV-IRON-2026-224  Iron Mountain Secure Shred       PAYABLE      $750.00         2026-10-24   PAID           
+INV-CLI-901        Nexus Healthcare Systems         RECEIVABLE   $45,000.00      2026-11-30   PENDING_APPROVAL
+INV-CLI-902        Vertex FinTech Corp              RECEIVABLE   $32,500.00      2026-10-31   PAID           
+INV-CLI-903        FinEdge Global Capital           RECEIVABLE   $62,000.00      2026-12-15   PENDING_APPROVAL
+INV-CLI-904        Quantum Dynamics Logistics       RECEIVABLE   $24,500.00      2026-11-20   APPROVED       
+INV-CLI-905        OmniMedia Digital Group          RECEIVABLE   $18,000.00      2026-10-25   PAID           
+INV-CLI-906        BioHealth Diagnostics            RECEIVABLE   $29,000.00      2026-11-28   PENDING_APPROVAL
+INV-CLI-907        Nova Retail Solutions            RECEIVABLE   $38,500.00      2026-12-05   APPROVED       
+INV-CLI-908        Vanguard Asset Management        RECEIVABLE   $85,000.00      2026-12-20   PENDING_APPROVAL
+INV-CLI-909        Horizon Telecommunications       RECEIVABLE   $52,000.00      2026-11-15   APPROVED       
+INV-CLI-910        Stellar Mobility Labs            RECEIVABLE   $41,000.00      2026-12-10   PENDING_APPROVAL
+INV-CLI-911        Aether Dynamics Aerospace        RECEIVABLE   $95,000.00      2026-12-28   PENDING_APPROVAL
+INV-CLI-912        Pacific Rim Maritime Group       RECEIVABLE   $28,000.00      2026-11-22   APPROVED       
+INV-CLI-913        Crestline Insurance Services     RECEIVABLE   $47,500.00      2026-12-12   PENDING_APPROVAL
+INV-CLI-914        Summit Energy Partners           RECEIVABLE   $36,000.00      2026-11-19   APPROVED       
+INV-CLI-915        Kodiak Robotics Research         RECEIVABLE   $31,000.00      2026-12-08   PENDING_APPROVAL
+==============================================================================================================
+TOTAL PAYABLE (Accounts Payable):   $200,686.75 USD
+TOTAL RECEIVABLE (Client Billings): $665,000.00 USD
+==============================================================================================================

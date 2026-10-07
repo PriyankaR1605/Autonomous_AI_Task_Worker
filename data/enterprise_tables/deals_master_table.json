@@ -1,0 +1,82 @@
+[
+  {
+    "deal_name": "Apex Global AI Renewal & Expansion",
+    "customer_name": "Apex Logistics Ltd",
+    "stage": "Negotiation",
+    "deal_value": 95000.0,
+    "close_date": "2026-11-15",
+    "probability_pct": 85
+  },
+  {
+    "deal_name": "Nexus Healthcare AI Automation Add-On",
+    "customer_name": "Nexus Healthcare Systems",
+    "stage": "Proposal",
+    "deal_value": 60000.0,
+    "close_date": "2026-11-30",
+    "probability_pct": 70
+  },
+  {
+    "deal_name": "Vertex FinTech Core Platform Multi-Year",
+    "customer_name": "Vertex FinTech Corp",
+    "stage": "Closed Won",
+    "deal_value": 260000.0,
+    "close_date": "2026-09-28",
+    "probability_pct": 100
+  },
+  {
+    "deal_name": "FinEdge High-Frequency Ingestion Module",
+    "customer_name": "FinEdge Global Capital",
+    "stage": "Qualification",
+    "deal_value": 120000.0,
+    "close_date": "2026-12-15",
+    "probability_pct": 50
+  },
+  {
+    "deal_name": "BioHealth Automated Genomics Workflow",
+    "customer_name": "BioHealth Diagnostics",
+    "stage": "Proposal",
+    "deal_value": 110000.0,
+    "close_date": "2026-11-20",
+    "probability_pct": 65
+  },
+  {
+    "deal_name": "Vanguard Private Cloud Hosting Tier",
+    "customer_name": "Vanguard Asset Management",
+    "stage": "Negotiation",
+    "deal_value": 280000.0,
+    "close_date": "2026-11-05",
+    "probability_pct": 90
+  },
+  {
+    "deal_name": "Horizon 5G Edge Network Orchestrator",
+    "customer_name": "Horizon Telecommunications",
+    "stage": "Proposal",
+    "deal_value": 175000.0,
+    "close_date": "2026-12-01",
+    "probability_pct": 60
+  },
+  {
+    "deal_name": "Aether Dynamics Spacecraft Telemetry Agent",
+    "customer_name": "Aether Dynamics Aerospace",
+    "stage": "Negotiation",
+    "deal_value": 240000.0,
+    "close_date": "2026-11-18",
+    "probability_pct": 80
+  },
+  {
+    "deal_name": "Pacific Rim Maritime Vessel Automated Pilot",
+    "customer_name": "Pacific Rim Maritime Group",
+    "stage": "Qualification",
+    "deal_value": 85000.0,
+    "close_date": "2026-12-20",
+    "probability_pct": 45
+  },
+  {
+    "deal_name": "Crestline InsurTech Adjudication Expansion",
+    "customer_name": "Crestline Insurance Services",
+    "stage": "Proposal",
+    "deal_value": 130000.0,
+    "close_date": "2026-11-28",
+    "probability_pct": 75
+  }
+]

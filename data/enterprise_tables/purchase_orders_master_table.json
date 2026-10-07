@@ -1,0 +1,74 @@
+[
+  {
+    "po_number": "PO-2026-301",
+    "supplier": "Apple Enterprise Direct",
+    "items_summary": "5x MacBook Pro 14\" M3",
+    "total_cost": 9995.0,
+    "status": "DELIVERED",
+    "created_at": "2026-09-10 10:00:00",
+    "delivery_expected": "2026-09-18"
+  },
+  {
+    "po_number": "PO-2026-302",
+    "supplier": "Dell Enterprise Store",
+    "items_summary": "8x Dell UltraSharp 32\" Monitors",
+    "total_cost": 5200.0,
+    "status": "ISSUED",
+    "created_at": "2026-10-02 11:30:00",
+    "delivery_expected": "2026-10-12"
+  },
+  {
+    "po_number": "PO-2026-303",
+    "supplier": "Acme Supplies Co",
+    "items_summary": "6x Herman Miller Ergonomic Chairs",
+    "total_cost": 7170.0,
+    "status": "ISSUED",
+    "created_at": "2026-10-04 15:45:00",
+    "delivery_expected": "2026-10-20"
+  },
+  {
+    "po_number": "PO-2026-304",
+    "supplier": "Cisco Systems",
+    "items_summary": "2x Cisco Catalyst 24-Port PoE Switch",
+    "total_cost": 2400.0,
+    "status": "DELIVERED",
+    "created_at": "2026-09-15 09:30:00",
+    "delivery_expected": "2026-09-22"
+  },
+  {
+    "po_number": "PO-2026-305",
+    "supplier": "PNY Commercial",
+    "items_summary": "1x NVIDIA RTX 6000 Ada GPU",
+    "total_cost": 6800.0,
+    "status": "IN_TRANSIT",
+    "created_at": "2026-10-01 14:00:00",
+    "delivery_expected": "2026-10-08"
+  },
+  {
+    "po_number": "PO-2026-306",
+    "supplier": "OfficeMax Pro",
+    "items_summary": "20x Cat6A Shielded Ethernet Cable 10-Packs",
+    "total_cost": 900.0,
+    "status": "DELIVERED",
+    "created_at": "2026-09-12 11:00:00",
+    "delivery_expected": "2026-09-16"
+  },
+  {
+    "po_number": "PO-2026-307",
+    "supplier": "Yubico Direct",
+    "items_summary": "5x YubiKey 5C NFC Security Key 50-Packs",
+    "total_cost": 10500.0,
+    "status": "ISSUED",
+    "created_at": "2026-10-03 13:15:00",
+    "delivery_expected": "2026-10-15"
+  },
+  {
+    "po_number": "PO-2026-308",
+    "supplier": "Dell Enterprise Store",
+    "items_summary": "2x Dell PowerEdge R760 2U Rackmount Server",
+    "total_cost": 16900.0,
+    "status": "IN_TRANSIT",
+    "created_at": "2026-09-28 09:00:00",
+    "delivery_expected": "2026-10-10"
+  }
+]

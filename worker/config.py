@@ -43,6 +43,7 @@ class Settings:
     DOCS_DIR: str = os.path.join(DATA_DIR, "company_docs")
     INVOICES_DIR: str = os.path.join(DATA_DIR, "sample_invoices")
     STORAGE_DIR: str = os.path.join(DATA_DIR, "storage")
+    TABLES_DIR: str = os.path.join(DATA_DIR, "enterprise_tables")
     SCREENSHOTS_DIR: str = os.path.join(STORAGE_DIR, "screenshots")
 
     def get_public_url(self, path: str = "") -> str:

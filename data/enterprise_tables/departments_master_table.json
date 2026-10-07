@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "name": "Engineering",
+    "head_of_dept": "Marcus Vance",
+    "budget_q3": 850000.0,
+    "spent_q3": 742500.0,
+    "headcount": 95
+  },
+  {
+    "id": 2,
+    "name": "IT & Security",
+    "head_of_dept": "Alex Wong",
+    "budget_q3": 320000.0,
+    "spent_q3": 284000.0,
+    "headcount": 24
+  },
+  {
+    "id": 3,
+    "name": "Sales & Revenue",
+    "head_of_dept": "Jessica Alba-Ruiz",
+    "budget_q3": 480000.0,
+    "spent_q3": 421000.0,
+    "headcount": 48
+  },
+  {
+    "id": 4,
+    "name": "Marketing & Growth",
+    "head_of_dept": "David Sterling",
+    "budget_q3": 280000.0,
+    "spent_q3": 162500.0,
+    "headcount": 26
+  },
+  {
+    "id": 5,
+    "name": "Human Resources",
+    "head_of_dept": "Elena Vance",
+    "budget_q3": 160000.0,
+    "spent_q3": 138000.0,
+    "headcount": 14
+  },
+  {
+    "id": 6,
+    "name": "Finance & Legal",
+    "head_of_dept": "Marcus Thorne",
+    "budget_q3": 210000.0,
+    "spent_q3": 184500.0,
+    "headcount": 18
+  },
+  {
+    "id": 7,
+    "name": "Customer Success",
+    "head_of_dept": "Amina Patel",
+    "budget_q3": 220000.0,
+    "spent_q3": 192000.0,
+    "headcount": 35
+  },
+  {
+    "id": 8,
+    "name": "Product & Design",
+    "head_of_dept": "Samantha Reed",
+    "budget_q3": 310000.0,
+    "spent_q3": 276000.0,
+    "headcount": 22
+  },
+  {
+    "id": 9,
+    "name": "Operations & Facilities",
+    "head_of_dept": "Raymond Cruz",
+    "budget_q3": 190000.0,
+    "spent_q3": 165000.0,
+    "headcount": 16
+  },
+  {
+    "id": 10,
+    "name": "Data & AI Research",
+    "head_of_dept": "Dr. Aris Thorne",
+    "budget_q3": 420000.0,
+    "spent_q3": 380000.0,
+    "headcount": 20
+  }
+]

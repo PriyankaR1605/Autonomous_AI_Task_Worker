@@ -1,0 +1,11 @@
+id,name,head_of_dept,budget_q3,spent_q3,headcount
+1,Engineering,Marcus Vance,850000.0,742500.0,95
+2,IT & Security,Alex Wong,320000.0,284000.0,24
+3,Sales & Revenue,Jessica Alba-Ruiz,480000.0,421000.0,48
+4,Marketing & Growth,David Sterling,280000.0,162500.0,26
+5,Human Resources,Elena Vance,160000.0,138000.0,14
+6,Finance & Legal,Marcus Thorne,210000.0,184500.0,18
+7,Customer Success,Amina Patel,220000.0,192000.0,35
+8,Product & Design,Samantha Reed,310000.0,276000.0,22
+9,Operations & Facilities,Raymond Cruz,190000.0,165000.0,16
+10,Data & AI Research,Dr. Aris Thorne,420000.0,380000.0,20

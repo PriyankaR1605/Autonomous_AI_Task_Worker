@@ -1,0 +1,167 @@
+[
+  {
+    "customer_code": "CUST-1001",
+    "company_name": "Nexus Healthcare Systems",
+    "industry": "Healthcare & Biotech",
+    "contract_tier": "Enterprise Tier",
+    "annual_contract_value": 180000.0,
+    "account_executive": "Maya Lin",
+    "status": "ACTIVE",
+    "health_score": 98,
+    "primary_contact": "Dr. Robert Vance, CIO"
+  },
+  {
+    "customer_code": "CUST-1002",
+    "company_name": "Vertex FinTech Corp",
+    "industry": "Financial Services",
+    "contract_tier": "Enterprise Tier",
+    "annual_contract_value": 130000.0,
+    "account_executive": "Maya Lin",
+    "status": "ACTIVE",
+    "health_score": 92,
+    "primary_contact": "Claire Chen, Head of Trading Tech"
+  },
+  {
+    "customer_code": "CUST-1003",
+    "company_name": "Quantum Dynamics Logistics",
+    "industry": "Supply Chain",
+    "contract_tier": "Mid-Market Tier",
+    "annual_contract_value": 75000.0,
+    "account_executive": "Jessica Alba-Ruiz",
+    "status": "ACTIVE",
+    "health_score": 88,
+    "primary_contact": "Thomas Hardy, VP Ops"
+  },
+  {
+    "customer_code": "CUST-1004",
+    "company_name": "FinEdge Global Capital",
+    "industry": "Banking & Investment",
+    "contract_tier": "Enterprise Tier",
+    "annual_contract_value": 210000.0,
+    "account_executive": "Jessica Alba-Ruiz",
+    "status": "ACTIVE",
+    "health_score": 99,
+    "primary_contact": "Jonathan Ross, CTO"
+  },
+  {
+    "customer_code": "CUST-1005",
+    "company_name": "OmniMedia Digital Group",
+    "industry": "Media & Entertainment",
+    "contract_tier": "Mid-Market Tier",
+    "annual_contract_value": 60000.0,
+    "account_executive": "Maya Lin",
+    "status": "ACTIVE",
+    "health_score": 91,
+    "primary_contact": "Sarah Connor, Lead Arch"
+  },
+  {
+    "customer_code": "CUST-1006",
+    "company_name": "BioHealth Diagnostics",
+    "industry": "Biotech & Genomics",
+    "contract_tier": "Enterprise Tier",
+    "annual_contract_value": 145000.0,
+    "account_executive": "Christian Cole",
+    "status": "ACTIVE",
+    "health_score": 95,
+    "primary_contact": "Dr. Angela Merkel, VP Research"
+  },
+  {
+    "customer_code": "CUST-1007",
+    "company_name": "Nova Retail Solutions",
+    "industry": "Retail & E-Commerce",
+    "contract_tier": "Mid-Market Tier",
+    "annual_contract_value": 90000.0,
+    "account_executive": "Sofia Reyes",
+    "status": "ACTIVE",
+    "health_score": 86,
+    "primary_contact": "Marcus Aurelius, COO"
+  },
+  {
+    "customer_code": "CUST-1008",
+    "company_name": "Vanguard Asset Management",
+    "industry": "Wealth & Asset Mgmt",
+    "contract_tier": "Enterprise Tier",
+    "annual_contract_value": 340000.0,
+    "account_executive": "Christian Cole",
+    "status": "ACTIVE",
+    "health_score": 99,
+    "primary_contact": "Alexander Hamilton, CIO"
+  },
+  {
+    "customer_code": "CUST-1009",
+    "company_name": "Horizon Telecommunications",
+    "industry": "Telecom & 5G",
+    "contract_tier": "Enterprise Tier",
+    "annual_contract_value": 220000.0,
+    "account_executive": "Jessica Alba-Ruiz",
+    "status": "ACTIVE",
+    "health_score": 94,
+    "primary_contact": "Elena Rostova, VP Network Ops"
+  },
+  {
+    "customer_code": "CUST-1010",
+    "company_name": "Stellar Mobility Labs",
+    "industry": "Autonomous Vehicles",
+    "contract_tier": "Mid-Market Tier",
+    "annual_contract_value": 85000.0,
+    "account_executive": "Sofia Reyes",
+    "status": "ACTIVE",
+    "health_score": 89,
+    "primary_contact": "Elon T. Vance, Head of Autonomy"
+  },
+  {
+    "customer_code": "CUST-1011",
+    "company_name": "Aether Dynamics Aerospace",
+    "industry": "Aerospace & Defense",
+    "contract_tier": "Enterprise Tier",
+    "annual_contract_value": 290000.0,
+    "account_executive": "Christian Cole",
+    "status": "ACTIVE",
+    "health_score": 97,
+    "primary_contact": "Gen. James Holden, Director Tech"
+  },
+  {
+    "customer_code": "CUST-1012",
+    "company_name": "Pacific Rim Maritime Group",
+    "industry": "Global Shipping",
+    "contract_tier": "Mid-Market Tier",
+    "annual_contract_value": 95000.0,
+    "account_executive": "Daphne Blake",
+    "status": "ACTIVE",
+    "health_score": 90,
+    "primary_contact": "Captain Naomi Nagata, Fleet VP"
+  },
+  {
+    "customer_code": "CUST-1013",
+    "company_name": "Crestline Insurance Services",
+    "industry": "Insurance & InsurTech",
+    "contract_tier": "Enterprise Tier",
+    "annual_contract_value": 165000.0,
+    "account_executive": "Maya Lin",
+    "status": "ACTIVE",
+    "health_score": 93,
+    "primary_contact": "Amos Burton, Claims Director"
+  },
+  {
+    "customer_code": "CUST-1014",
+    "company_name": "Summit Energy Partners",
+    "industry": "Renewable Energy",
+    "contract_tier": "Enterprise Tier",
+    "annual_contract_value": 140000.0,
+    "account_executive": "Jessica Alba-Ruiz",
+    "status": "ACTIVE",
+    "health_score": 91,
+    "primary_contact": "Camina Drummer, VP Infrastructure"
+  },
+  {
+    "customer_code": "CUST-1015",
+    "company_name": "Kodiak Robotics Research",
+    "industry": "Robotics & Automation",
+    "contract_tier": "Mid-Market Tier",
+    "annual_contract_value": 115000.0,
+    "account_executive": "Sofia Reyes",
+    "status": "ACTIVE",
+    "health_score": 94,
+    "primary_contact": "Dr. Alex Kamal, Navigation Lead"
+  }
+]

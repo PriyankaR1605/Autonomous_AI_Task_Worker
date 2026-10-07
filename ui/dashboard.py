@@ -313,11 +313,70 @@ with st.form(key="natural_language_task_form", clear_on_submit=False):
     with col_hint:
         st.caption("Click **Execute** to send your query and domain data to Gemini 3.8 Flash, run autonomous milestones, and verify changes.")
 
-# Live Domain Context Inspector
-with st.expander(f"📦 Preview Real Enterprise Records for {selected_domain_label}", expanded=False):
-    live_ctx = EnterpriseContextRetriever.retrieve(selected_domain_key)
-    st.info(f"Authentic enterprise records from SQLite database that will be fed to Gemini for {selected_domain_label}:")
-    st.json(live_ctx)
+# Live Domain Context Inspector & Single-File Master Tables
+with st.expander(f"📦 Preview Real Enterprise Records & Master Single-File Table for {selected_domain_label}", expanded=False):
+    tab_table, tab_json, tab_download = st.tabs(["📊 Master Table (Single File)", "🤖 Gemini Context JSON", "📥 Download Datasets"])
+
+    TABLE_FILE_MAP = {
+        "invoice": "invoices_master_table.csv",
+        "hr_leave": "employees_master_table.csv",
+        "ticket": "support_tickets_master_table.csv",
+        "inventory": "inventory_master_table.csv",
+        "expense": "expenses_master_table.csv",
+        "budget": "departments_master_table.csv",
+        "crm": "customers_crm_master_table.csv",
+        "policy": "ALL_DOMAINS_ENTERPRISE_MASTER_DATASET.json",
+        "general": "ALL_DOMAINS_ENTERPRISE_MASTER_DATASET.json"
+    }
+
+    master_filename = TABLE_FILE_MAP.get(selected_domain_key, "invoices_master_table.csv")
+    master_filepath = os.path.join(settings.TABLES_DIR, master_filename)
+
+    with tab_table:
+        if os.path.exists(master_filepath) and master_filepath.endswith(".csv"):
+            import pandas as pd
+            df_preview = pd.read_csv(master_filepath)
+            st.caption(f"📁 **Source Single File**: `data/enterprise_tables/{master_filename}` ({len(df_preview)} total records in one file)")
+            st.dataframe(df_preview, use_container_width=True, height=260)
+            if selected_domain_key == "invoice":
+                st.info("📄 **Consolidated Invoices Document**: All invoices are also tabled in `data/sample_invoices/Master_Invoices_Register.pdf` and `.txt`.")
+        elif os.path.exists(master_filepath) and master_filepath.endswith(".json"):
+            st.caption(f"📁 **Source Single File**: `data/enterprise_tables/{master_filename}`")
+            with open(master_filepath, "r", encoding="utf-8") as f_json:
+                st.json(json.load(f_json))
+        else:
+            st.caption(f"Single-file master table available at: `data/enterprise_tables/{master_filename}`")
+
+    with tab_json:
+        live_ctx = EnterpriseContextRetriever.retrieve(selected_domain_key)
+        st.info(f"Authentic enterprise records from SQLite database that will be fed to Gemini for {selected_domain_label}:")
+        st.json(live_ctx)
+
+    with tab_download:
+        st.markdown(f"**Download Consolidated Single-File Master Tables:**")
+        col_dl1, col_dl2 = st.columns(2)
+        with col_dl1:
+            if os.path.exists(master_filepath):
+                with open(master_filepath, "rb") as f_dl:
+                    st.download_button(
+                        label=f"⬇️ Download {master_filename}",
+                        data=f_dl.read(),
+                        file_name=master_filename,
+                        mime="text/csv" if master_filename.endswith(".csv") else "application/json",
+                        key=f"dl_btn_{master_filename}"
+                    )
+        with col_dl2:
+            unified_json_path = os.path.join(settings.TABLES_DIR, "ALL_DOMAINS_ENTERPRISE_MASTER_DATASET.json")
+            if os.path.exists(unified_json_path):
+                with open(unified_json_path, "rb") as f_all:
+                    st.download_button(
+                        label="🌐 Download ALL DOMAINS Unified Dataset (.json)",
+                        data=f_all.read(),
+                        file_name="ALL_DOMAINS_ENTERPRISE_MASTER_DATASET.json",
+                        mime="application/json",
+                        key="dl_btn_all_unified"
+                    )
+
 
 # Process Submitted Task
 if submitted and user_prompt_input and user_prompt_input.strip():

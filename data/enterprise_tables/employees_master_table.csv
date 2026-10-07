@@ -1,0 +1,61 @@
+emp_code,name,email,department,title,manager_name,hire_date,salary,status,leave_balance,phone,emergency_contact,performance_rating
+EMP-101,Sarah Jenkins,sarah.jenkins@centralign.internal,Engineering,Senior Software Engineer,Marcus Vance,2022-03-15,148000.0,ACTIVE,16,+1-415-555-0111,Robert Jenkins (Spouse),4.8
+EMP-103,David Miller,david.miller@centralign.internal,Engineering,Staff Infrastructure Engineer,Marcus Vance,2022-11-10,155000.0,ACTIVE,18,+1-415-555-0113,Clara Miller (Sister),4.7
+EMP-109,Chloe Martin,chloe.martin@centralign.internal,Engineering,Frontend Developer,Sarah Jenkins,2023-04-18,115000.0,ACTIVE,15,+1-415-555-0119,Luc Martin (Father),4.5
+EMP-113,Marcus Vance,marcus.vance@centralign.internal,Engineering,VP of Engineering,CEO,2021-01-10,220000.0,ACTIVE,12,+1-415-555-0123,Elena Vance (Sister),4.9
+EMP-114,Ethan Brooks,ethan.brooks@centralign.internal,Engineering,Principal Distributed Systems Architect,Marcus Vance,2021-06-01,190000.0,ACTIVE,14,+1-415-555-0124,Laura Brooks (Spouse),4.9
+EMP-115,Zoe Chen,zoe.chen@centralign.internal,Engineering,Senior Backend Go Engineer,Sarah Jenkins,2022-08-15,142000.0,ACTIVE,19,+1-415-555-0125,Kevin Chen (Brother),4.7
+EMP-116,Lucas Rossi,lucas.rossi@centralign.internal,Engineering,DevOps & Cloud Reliability Engineer,David Miller,2023-02-01,132000.0,ACTIVE,17,+1-415-555-0126,Giulia Rossi (Spouse),4.6
+EMP-117,Aria Montgomery,aria.montgomery@centralign.internal,Engineering,Senior QA Automation Engineer,Sarah Jenkins,2022-10-05,128000.0,ACTIVE,20,+1-415-555-0127,Byron Montgomery (Father),4.8
+EMP-118,Devin Kowalski,devin.kowalski@centralign.internal,Engineering,Full Stack Platform Engineer,Sarah Jenkins,2023-06-12,125000.0,ACTIVE,16,+1-415-555-0128,Anna Kowalski (Mother),4.4
+EMP-148,Nadia Hassan,nadia.hassan@centralign.internal,Engineering,Site Reliability Engineer II,David Miller,2023-08-01,122000.0,ACTIVE,18,+1-415-555-0158,Zayd Hassan (Spouse),4.6
+EMP-149,Carlos Mendoza,carlos.mendoza@centralign.internal,Engineering,Embedded Systems Engineer,Ethan Brooks,2022-12-01,138000.0,ACTIVE,15,+1-415-555-0159,Maria Mendoza (Mother),4.7
+EMP-150,Seraphina Lin,seraphina.lin@centralign.internal,Engineering,Security Software Engineer,Ethan Brooks,2023-03-20,140000.0,ACTIVE,19,+1-415-555-0160,George Lin (Father),4.8
+EMP-102,Alex Wong,alex.wong@centralign.internal,IT & Security,Lead Systems Architect,Marcus Vance,2021-08-01,162000.0,ACTIVE,14,+1-415-555-0112,Mei Wong (Mother),4.9
+EMP-110,Liam O'Connor,liam.oconnor@centralign.internal,IT & Security,Security Operations Analyst,Alex Wong,2023-09-01,105000.0,ACTIVE,20,+1-415-555-0120,Sean O'Connor (Brother),4.6
+EMP-119,Rajiv Sharma,rajiv.sharma@centralign.internal,IT & Security,Senior Network Security Engineer,Alex Wong,2022-05-18,145000.0,ACTIVE,15,+1-415-555-0129,Pooja Sharma (Spouse),4.8
+EMP-120,Hanna Lindqvist,hanna.lindqvist@centralign.internal,IT & Security,IT Desktop Support Lead,Alex Wong,2022-11-20,98000.0,ACTIVE,18,+1-415-555-0130,Erik Lindqvist (Father),4.7
+EMP-121,Tariq Mansoor,tariq.mansoor@centralign.internal,IT & Security,IAM & Cloud Identity Specialist,Alex Wong,2023-03-10,138000.0,ACTIVE,16,+1-415-555-0131,Fatima Mansoor (Spouse),4.6
+EMP-151,Arthur Pendelton,arthur.pendelton@centralign.internal,IT & Security,IT Helpdesk Specialist,Hanna Lindqvist,2023-10-01,78000.0,ACTIVE,19,+1-415-555-0161,Martha Pendelton (Spouse),4.4
+EMP-106,Jessica Alba-Ruiz,jessica.alba@centralign.internal,Sales & Revenue,VP of Worldwide Sales,CEO,2021-05-12,185000.0,ACTIVE,15,+1-415-555-0116,Carlos Ruiz (Spouse),4.8
+EMP-111,Maya Lin,maya.lin@centralign.internal,Sales & Revenue,Senior Enterprise Account Exec,Jessica Alba-Ruiz,2022-09-15,135000.0,ACTIVE,14,+1-415-555-0121,Wei Lin (Father),4.9
+EMP-122,Christian Cole,christian.cole@centralign.internal,Sales & Revenue,Strategic Enterprise Sales Director,Jessica Alba-Ruiz,2021-10-01,165000.0,ACTIVE,11,+1-415-555-0132,Diana Cole (Spouse),4.8
+EMP-123,Sofia Reyes,sofia.reyes@centralign.internal,Sales & Revenue,Mid-Market Account Executive,Christian Cole,2023-01-15,110000.0,ACTIVE,17,+1-415-555-0133,Manuel Reyes (Brother),4.5
+EMP-124,Brett Henderson,brett.henderson@centralign.internal,Sales & Revenue,Sales Development Representative Lead,Jessica Alba-Ruiz,2023-05-01,85000.0,ACTIVE,19,+1-415-555-0134,Kelly Henderson (Spouse),4.4
+EMP-152,Daphne Blake,daphne.blake@centralign.internal,Sales & Revenue,Senior Solutions Engineer,Christian Cole,2022-07-01,145000.0,ACTIVE,16,+1-415-555-0162,Fred Blake (Brother),4.8
+EMP-107,David Sterling,david.sterling@centralign.internal,Marketing & Growth,Director of Product Marketing,CEO,2023-01-09,140000.0,ACTIVE,17,+1-415-555-0117,Alice Sterling (Spouse),4.6
+EMP-125,Natalie Foster,natalie.foster@centralign.internal,Marketing & Growth,Head of Demand Generation,David Sterling,2022-04-10,130000.0,ACTIVE,15,+1-415-555-0135,George Foster (Father),4.7
+EMP-126,Jordan Rivera,jordan.rivera@centralign.internal,Marketing & Growth,Senior Content & Brand Strategist,David Sterling,2022-09-01,105000.0,ACTIVE,16,+1-415-555-0136,Carmen Rivera (Mother),4.6
+EMP-127,Kimberly Park,kimberly.park@centralign.internal,Marketing & Growth,Performance Marketing Analyst,Natalie Foster,2023-07-15,92000.0,ACTIVE,18,+1-415-555-0137,Joon Park (Brother),4.5
+EMP-153,Zachary Vance,zachary.vance@centralign.internal,Marketing & Growth,Digital Growth Marketing Manager,Natalie Foster,2022-11-15,115000.0,ACTIVE,14,+1-415-555-0163,Chloe Vance (Spouse),4.7
+EMP-104,Elena Vance,elena.vance@centralign.internal,Human Resources,VP of People & Culture,CEO,2021-02-01,175000.0,ACTIVE,12,+1-415-555-0114,Marcus Vance (Brother),5.0
+EMP-128,Claire Dupont,claire.dupont@centralign.internal,Human Resources,Senior HR Business Partner,Elena Vance,2022-02-15,118000.0,ACTIVE,16,+1-415-555-0138,Jean Dupont (Father),4.8
+EMP-129,Trevor Walsh,trevor.walsh@centralign.internal,Human Resources,Lead Technical Recruiter,Elena Vance,2022-06-01,112000.0,ACTIVE,14,+1-415-555-0139,Grace Walsh (Spouse),4.7
+EMP-130,Meera Joshi,meera.joshi@centralign.internal,Human Resources,People Operations Coordinator,Claire Dupont,2023-04-01,78000.0,ACTIVE,20,+1-415-555-0140,Sanjay Joshi (Father),4.6
+EMP-154,Harrison Wells,harrison.wells@centralign.internal,Human Resources,Compensation & Benefits Analyst,Elena Vance,2022-09-01,105000.0,ACTIVE,17,+1-415-555-0164,Nora Wells (Daughter),4.6
+EMP-105,Marcus Thorne,marcus.thorne@centralign.internal,Finance & Legal,Chief Financial Officer,CEO,2021-01-15,210000.0,ACTIVE,10,+1-415-555-0115,Victoria Thorne (Spouse),5.0
+EMP-112,Thomas Becker,thomas.becker@centralign.internal,Finance & Legal,Senior Corporate Accountant,Marcus Thorne,2022-02-14,112000.0,ACTIVE,13,+1-415-555-0122,Greta Becker (Spouse),4.7
+EMP-131,Samantha Wu,samantha.wu@centralign.internal,Finance & Legal,Senior Legal Counsel & Compliance Lead,Marcus Thorne,2021-09-01,172000.0,ACTIVE,15,+1-415-555-0141,Patrick Wu (Spouse),4.9
+EMP-132,Jonathan Price,jonathan.price@centralign.internal,Finance & Legal,Financial Planning & Analysis Manager,Marcus Thorne,2022-05-01,135000.0,ACTIVE,14,+1-415-555-0142,Rachel Price (Spouse),4.7
+EMP-133,Ananya Roy,ananya.roy@centralign.internal,Finance & Legal,Accounts Payable Specialist,Thomas Becker,2023-03-15,82000.0,ACTIVE,19,+1-415-555-0143,Vikram Roy (Brother),4.5
+EMP-155,Gregory House,gregory.house@centralign.internal,Finance & Legal,Senior Forensic & Tax Auditor,Marcus Thorne,2022-03-10,142000.0,ACTIVE,12,+1-415-555-0165,James Wilson (Friend),4.8
+EMP-108,Amina Patel,amina.patel@centralign.internal,Customer Success,Director of Customer Success,CEO,2022-06-20,138000.0,ACTIVE,19,+1-415-555-0118,Tariq Patel (Brother),4.7
+EMP-134,Lucas Meyer,lucas.meyer@centralign.internal,Customer Success,Principal Technical Account Manager,Amina Patel,2022-03-01,128000.0,ACTIVE,16,+1-415-555-0144,Leonie Meyer (Spouse),4.8
+EMP-135,Olivia Taylor,olivia.taylor@centralign.internal,Customer Success,Senior Customer Success Manager,Amina Patel,2022-10-15,115000.0,ACTIVE,18,+1-415-555-0145,James Taylor (Spouse),4.6
+EMP-136,Daniel Kim,daniel.kim@centralign.internal,Customer Success,Customer Onboarding Specialist,Amina Patel,2023-05-10,90000.0,ACTIVE,17,+1-415-555-0146,Grace Kim (Mother),4.5
+EMP-156,Fiona Gallagher,fiona.gallagher@centralign.internal,Customer Success,Enterprise Escalation Manager,Amina Patel,2022-08-01,120000.0,ACTIVE,15,+1-415-555-0166,Ian Gallagher (Brother),4.7
+EMP-137,Samantha Reed,samantha.reed@centralign.internal,Product & Design,VP of Product Management,CEO,2021-04-01,188000.0,ACTIVE,13,+1-415-555-0147,Tom Reed (Spouse),4.9
+EMP-138,Felix Baum,felix.baum@centralign.internal,Product & Design,Principal Product Designer,Samantha Reed,2022-01-10,145000.0,ACTIVE,15,+1-415-555-0148,Heidi Baum (Sister),4.8
+EMP-139,Kavita Rao,kavita.rao@centralign.internal,Product & Design,Senior Technical Product Manager,Samantha Reed,2022-07-20,140000.0,ACTIVE,17,+1-415-555-0149,Arun Rao (Spouse),4.7
+EMP-140,Liam Gallagher,liam.gallagher@centralign.internal,Product & Design,UI/UX Interaction Designer,Felix Baum,2023-02-15,110000.0,ACTIVE,18,+1-415-555-0150,Noel Gallagher (Brother),4.4
+EMP-157,Penelope Cruz-Miller,penelope.cruz@centralign.internal,Product & Design,Design Systems Lead,Felix Baum,2022-05-15,135000.0,ACTIVE,16,+1-415-555-0167,Javier Miller (Spouse),4.8
+EMP-141,Raymond Cruz,raymond.cruz@centralign.internal,Operations & Facilities,Director of Workplace & Facilities,CEO,2021-07-01,135000.0,ACTIVE,15,+1-415-555-0151,Luisa Cruz (Spouse),4.7
+EMP-142,Brooke Sullivan,brooke.sullivan@centralign.internal,Operations & Facilities,Procurement & Vendor Operations Lead,Raymond Cruz,2022-04-01,110000.0,ACTIVE,16,+1-415-555-0152,Neil Sullivan (Spouse),4.8
+EMP-143,Mateo Morales,mateo.morales@centralign.internal,Operations & Facilities,Logistics & Inventory Supervisor,Brooke Sullivan,2023-01-20,88000.0,ACTIVE,19,+1-415-555-0153,Sofia Morales (Sister),4.6
+EMP-158,Winston Bishop,winston.bishop@centralign.internal,Operations & Facilities,Facilities Safety & Security Officer,Raymond Cruz,2023-04-10,84000.0,ACTIVE,17,+1-415-555-0168,Aly Bishop (Spouse),4.6
+EMP-144,Dr. Aris Thorne,aris.thorne@centralign.internal,Data & AI Research,Chief AI Scientist,CEO,2021-03-01,230000.0,ACTIVE,12,+1-415-555-0154,Eleni Thorne (Spouse),5.0
+EMP-145,Priya Sharma,priya.sharma@centralign.internal,Data & AI Research,Senior Machine Learning Engineer,Dr. Aris Thorne,2022-05-15,165000.0,ACTIVE,17,+1-415-555-0155,Rohan Sharma (Brother),4.9
+EMP-146,Dmitri Volkov,dmitri.volkov@centralign.internal,Data & AI Research,Lead NLP & LLM Systems Engineer,Dr. Aris Thorne,2022-09-01,168000.0,ACTIVE,15,+1-415-555-0156,Olga Volkova (Spouse),4.8
+EMP-147,Selena Gomez-Tan,selena.tan@centralign.internal,Data & AI Research,Data Infrastructure & MLOps Architect,Dr. Aris Thorne,2023-02-01,152000.0,ACTIVE,18,+1-415-555-0157,Marcus Tan (Spouse),4.7
+EMP-159,Turing Vance,turing.vance@centralign.internal,Data & AI Research,AI Research Scientist - Agentic Cognition,Dr. Aris Thorne,2023-06-01,178000.0,ACTIVE,16,+1-415-555-0169,Ada Vance (Sister),5.0
+EMP-160,Hannah Abbott,hannah.abbott@centralign.internal,Data & AI Research,Data Labeling & Annotation Lead,Priya Sharma,2023-09-15,96000.0,ACTIVE,19,+1-415-555-0170,Neville Abbott (Spouse),4.5
