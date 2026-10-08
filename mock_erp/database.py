@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import uuid
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
 
@@ -623,15 +624,25 @@ def create_invoice(invoice_number: str, vendor_name: str, amount: float, due_dat
     conn = get_connection()
     cursor = conn.cursor()
     created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute(
-        """INSERT INTO invoices (invoice_number, vendor_name, invoice_type, amount, currency, due_date, status, notes, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, 'ENTERED', ?, ?)""",
-        (invoice_number, vendor_name, invoice_type, amount, currency, due_date, notes, created_at)
-    )
-    invoice_id = cursor.lastrowid
+    cursor.execute("SELECT id FROM invoices WHERE invoice_number = ?", (invoice_number,))
+    existing = cursor.fetchone()
+    if existing:
+        cursor.execute(
+            """UPDATE invoices SET vendor_name = ?, invoice_type = ?, amount = ?, currency = ?, due_date = ?, status = 'ENTERED', notes = ?, created_at = ?
+               WHERE id = ?""",
+            (vendor_name, invoice_type, amount, currency, due_date, notes, created_at, existing["id"])
+        )
+        invoice_id = existing["id"]
+    else:
+        cursor.execute(
+            """INSERT INTO invoices (invoice_number, vendor_name, invoice_type, amount, currency, due_date, status, notes, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, 'ENTERED', ?, ?)""",
+            (invoice_number, vendor_name, invoice_type, amount, currency, due_date, notes, created_at)
+        )
+        invoice_id = cursor.lastrowid
     conn.commit()
     conn.close()
-    log_audit("INVOICE_CREATED", f"Created {invoice_type} invoice {invoice_number} for {vendor_name} amount: ${amount:.2f} {currency}")
+    log_audit("INVOICE_CREATED", f"Recorded {invoice_type} invoice {invoice_number} for {vendor_name} amount: ${amount:.2f} {currency}")
     return {
         "id": invoice_id,
         "invoice_number": invoice_number,
@@ -819,7 +830,8 @@ def create_purchase_order(supplier: str, items_summary: str, total_cost: float, 
     conn = get_connection()
     cursor = conn.cursor()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    po_num = f"PO-{datetime.now().strftime('%Y')}-{abs(hash(items_summary + now_str)) % 900 + 100}"
+    unique_suffix = f"{abs(hash(items_summary + now_str)) % 900 + 100}-{uuid.uuid4().hex[:4].upper()}"
+    po_num = f"PO-{datetime.now().strftime('%Y')}-{unique_suffix}"
     if not delivery_expected:
         delivery_expected = datetime.fromtimestamp(datetime.now().timestamp() + 86400 * 14).strftime("%Y-%m-%d")
         

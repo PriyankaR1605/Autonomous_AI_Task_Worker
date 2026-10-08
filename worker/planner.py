@@ -75,8 +75,13 @@ class TaskPlanner:
             or ("amount" in p_lower and "enter" in p_lower)
         )
         is_ticket = any(w in p_lower for w in ("ticket", "helpdesk", "incident", "itsm", "tck-", "inc-", "critical priority", "reassign", "assign to", "priority tickets", "support tickets"))
-        is_inventory = any(w in p_lower for w in ("inventory", "warehouse", "reorder", "restock", "sku", "purchase order", "po-", "low-stock", "stock level", "stock", "catalog", "equipment", "macbook", "laptop", "monitor", "hardware", "item", "product"))
-        is_budget = any(w in p_lower for w in ("budget", "variance", "expenditure", "allocated", "q3 budget", "surplus", "deficit", "spend", "spending"))
+        is_budget = any(w in p_lower for w in ("budget", "variance", "expenditure", "allocated", "q3 budget", "surplus", "deficit", "spend", "spending", "burn rate"))
+        is_inventory = (
+            any(w in p_lower for w in ("inventory", "warehouse", "reorder", "restock", "sku", "purchase order", "po-", "low-stock", "stock level", "catalog", "equipment", "macbook", "laptop", "monitor", "hardware"))
+            or ("stock" in p_lower and not is_budget)
+            or (re.search(r'\b(?:sku-\w+|item|items|goods)\b', p_lower) and not is_budget and not is_ticket and not is_expense)
+            or (re.search(r'\b(?:product|products)\b', p_lower) and not is_budget and "product development" not in p_lower and "production" not in p_lower)
+        )
         is_expense = any(w in p_lower for w in ("expense", "exp-", "reimbursement", "spending policy", "credit card", "merchant", "expense claim", "expense report", "receipt"))
         is_policy = any(w in p_lower for w in ("policy", "policies", "handbook", "iso 27001", "soc 2", "compliance standard", "governance", "rules", "guidelines"))
         
@@ -94,12 +99,12 @@ class TaskPlanner:
             return "ticket"
         if d_override in ("invoice", "finance", "ap") and is_invoice:
             return "invoice"
+        if d_override in ("budget", "analytics") and is_budget:
+            return "budget"
         if d_override in ("inventory", "supply_chain") and is_inventory:
             return "inventory"
         if d_override in ("expense", "compliance") and is_expense:
             return "expense"
-        if d_override in ("budget", "analytics") and is_budget:
-            return "budget"
 
         # Questions about policies/rules should route to policy unless it's an action (like approve or check balance)
         is_action_on_record = any(w in p_lower for w in ("approve", "deduct", "remaining", "balance", "update", "enter", "assign", "reorder"))
@@ -109,14 +114,14 @@ class TaskPlanner:
         # Primary natural language intent takes top priority
         if is_invoice:
             return "invoice"
-        if is_ticket:
-            return "ticket"
-        if is_inventory:
-            return "inventory"
-        if is_expense:
-            return "expense"
         if is_budget:
             return "budget"
+        if is_ticket:
+            return "ticket"
+        if is_expense:
+            return "expense"
+        if is_inventory:
+            return "inventory"
         if is_policy:
             return "policy"
         if is_hr:
