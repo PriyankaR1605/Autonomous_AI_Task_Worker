@@ -137,21 +137,31 @@ class OutcomeVerifier:
 
     @staticmethod
     def _verify_leave(source_data: Dict[str, Any]) -> VerificationResult:
-        emp_name = source_data.get("employee_name") or source_data.get("name") or "Sarah Jenkins"
+        emp_name = (
+            source_data.get("employee_name")
+            or source_data.get("emp_name")
+            or source_data.get("name")
+            or ""
+        )
+        req_code = source_data.get("req_code")
         reqs = get_all_leave_requests()
         matched = None
         for r in reqs:
-            if emp_name.lower() in r["emp_name"].lower():
+            if req_code and r.get("req_code") == req_code:
+                matched = r
+                break
+            if emp_name and emp_name.lower() in r.get("emp_name", "").lower():
                 matched = r
                 break
 
         if not matched:
+            target_label = emp_name or req_code or "the requested employee"
             return VerificationResult(
                 verified=False,
                 source_values=source_data,
                 target_values={},
-                discrepancies=[f"No leave record found for employee '{emp_name}'."],
-                verification_message=f"Verification FAILED: Leave request for {emp_name} not found."
+                discrepancies=[f"No leave record found for employee '{target_label}'."],
+                verification_message=f"Verification FAILED: Leave request for {target_label} not found."
             )
 
         discrepancies = []

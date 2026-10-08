@@ -65,40 +65,49 @@ class EnterpriseContextRetriever:
         p_lower = (prompt or "").lower()
 
         # -------------------------------------------------------------
-        # STEP 1: RESOLVE TARGET DOMAIN (Strict parameter priority -> Keyword fallback)
+        # STEP 1: RESOLVE TARGET DOMAIN (Smart Intent Detection & Override Reconciliation)
         # -------------------------------------------------------------
-        if domain_clean in ("hr_leave", "hr", "employee", "leave"):
-            target_domain = "hr_leave"
-        elif domain_clean in ("invoice", "finance", "ap"):
+        # Check for greetings / meta-capabilities questions
+        is_greeting = any(re.search(rf'\b{w}\b', p_lower) for w in ("hello", "hi", "hey", "who are you", "what can you do", "help", "capabilities", "features"))
+
+        is_invoice = (
+            any(w in p_lower for w in ("invoice", "payable", "vendor", "bill", "due date", "amount due", "inv-", "company x", "company y", "acme", "payment terms", "accounts payable"))
+            or ("amount" in p_lower and "enter" in p_lower)
+        )
+        is_ticket = any(w in p_lower for w in ("ticket", "helpdesk", "incident", "itsm", "tck-", "inc-", "critical priority", "reassign", "assign to", "priority tickets", "support tickets"))
+        is_inventory = any(w in p_lower for w in ("inventory", "warehouse", "reorder", "restock", "sku", "purchase order", "po-", "low-stock", "stock level", "stock", "catalog", "equipment", "macbook", "laptop", "monitor", "hardware", "item", "product"))
+        is_budget = any(w in p_lower for w in ("budget", "variance", "expenditure", "allocated", "q3 budget", "surplus", "deficit", "spend", "spending"))
+        is_expense = any(w in p_lower for w in ("expense", "exp-", "reimbursement", "spending policy", "credit card", "merchant", "expense claim", "expense report", "receipt"))
+        is_policy = any(w in p_lower for w in ("policy", "policies", "handbook", "iso 27001", "soc 2", "compliance standard", "governance", "rules", "guidelines"))
+        
+        # Check employee match without bare 'for'
+        from worker.planner import TaskPlanner
+        emp_name = TaskPlanner.extract_target_employee(prompt)
+        is_hr = (
+            any(w in p_lower for w in ("leave", "vacation", "pto", "time off", "time-off", "hire date", "salary", "compensation", "payroll", "headcount", "personnel"))
+            or (emp_name is not None and not is_ticket and not is_expense and not is_invoice and not is_inventory and not is_budget and not is_policy)
+            or ("employee" in p_lower and not is_expense and not is_policy)
+        )
+
+        # Primary natural language intent takes top priority
+        if is_invoice:
             target_domain = "invoice"
-        elif domain_clean in ("ticket", "it_support", "helpdesk"):
+        elif is_ticket:
             target_domain = "ticket"
-        elif domain_clean in ("inventory", "supply_chain", "po"):
+        elif is_inventory:
             target_domain = "inventory"
-        elif domain_clean in ("expense", "compliance"):
+        elif is_expense:
             target_domain = "expense"
-        elif domain_clean in ("budget", "analytics"):
+        elif is_budget:
             target_domain = "budget"
-        elif domain_clean in ("policy", "governance", "handbook", "contract"):
+        elif is_hr:
+            target_domain = "hr_leave"
+        elif is_policy:
             target_domain = "policy"
-        elif domain_clean in ("general", "all", ""):
-            # Fallback to keyword semantic inference when domain is general or unspecified
-            if any(w in p_lower for w in ("employee", "leave", "vacation", "pto", "sarah jenkins", "salary", "hiring", "manager")):
-                target_domain = "hr_leave"
-            elif any(w in p_lower for w in ("invoice", "payable", "vendor", "bill", "due date", "company x", "company y", "acme")):
-                target_domain = "invoice"
-            elif any(w in p_lower for w in ("ticket", "helpdesk", "incident", "alex wong", "critical priority")):
-                target_domain = "ticket"
-            elif any(w in p_lower for w in ("inventory", "reorder", "purchase order", "restock", "sku", "warehouse")):
-                target_domain = "inventory"
-            elif any(w in p_lower for w in ("expense", "reimbursement", "spending policy", "credit card")):
-                target_domain = "expense"
-            elif any(w in p_lower for w in ("budget", "variance", "expenditure", "spend", "q3")):
-                target_domain = "budget"
-            elif any(w in p_lower for w in ("policy", "handbook", "compliance", "iso 27001", "governance", "contract")):
-                target_domain = "policy"
-            else:
-                target_domain = "general"
+        elif is_greeting:
+            target_domain = "general"
+        elif domain_clean and domain_clean not in ("auto", "all", "general", ""):
+            target_domain = domain_clean
         else:
             target_domain = "general"
 
@@ -113,16 +122,23 @@ class EnterpriseContextRetriever:
             departments = get_all_departments()
             handbook = cls._read_doc_or_pdf("Employee_Handbook_and_Leave_Policy_2026.txt")
 
-            # Check if prompt targets a specific employee (full name or name parts)
+            # Check if prompt targets a specific employee (code or full name)
             target_emp_data = None
-            for emp in employees:
-                emp_name = emp.get("name", "").lower()
-                name_parts = emp_name.split()
-                if (emp.get("emp_code", "").lower() in p_lower or
-                    emp_name in p_lower or
-                    any(p in p_lower for p in name_parts if len(p) > 2)):
-                    target_emp_data = emp
-                    break
+            code_match = re.search(r'\b(EMP-\d+)\b', prompt, re.IGNORECASE)
+            if code_match:
+                c = code_match.group(1).upper()
+                for emp in employees:
+                    if emp.get("emp_code") == c:
+                        target_emp_data = emp
+                        break
+
+            if not target_emp_data:
+                sorted_emps = sorted(employees, key=lambda x: len(x.get("name", "")), reverse=True)
+                for emp in sorted_emps:
+                    emp_name = emp.get("name", "").strip()
+                    if emp_name and emp_name.lower() in p_lower:
+                        target_emp_data = emp
+                        break
 
             # Filter department if mentioned
             dept_matches = [d for d in departments if d.get("name", "").lower() in p_lower]
@@ -136,26 +152,35 @@ class EnterpriseContextRetriever:
             queried_entity = ""
 
             emp_match = re.search(r'(?:employee|for|staff)\s+([A-Za-z\s]+?)(?:,|\.|\scheck|\sapprove|\sand|\'s|$)', prompt, re.IGNORECASE)
-            code_match = re.search(r'\b(EMP-\d+)\b', prompt, re.IGNORECASE)
             if emp_match:
                 candidate = emp_match.group(1).strip()
-                if candidate.lower() not in ("all", "all employees", "leave", "vacation", "each", "any", "staff", "a", "an", "the"):
+                if candidate.lower() not in ("all", "all employees", "leave", "vacation", "each", "any", "staff", "a", "an", "the", "our", "me", "new"):
                     queried_entity = candidate
                     if not target_emp_data:
                         entity_found = False
                         not_found_reason = f"Employee '{candidate}' was not found in the enterprise employee directory."
-            elif code_match:
+            elif code_match and not target_emp_data:
                 candidate = code_match.group(1).strip().upper()
                 queried_entity = candidate
-                if not target_emp_data:
-                    entity_found = False
-                    not_found_reason = f"Employee code '{candidate}' was not found in the enterprise employee directory."
+                entity_found = False
+                not_found_reason = f"Employee code '{candidate}' was not found in the enterprise employee directory."
+
+            # Compute enterprise payroll metrics
+            total_salary = sum(float(e.get("salary", 0)) for e in employees)
+            avg_salary = (total_salary / len(employees)) if employees else 0.0
+            dept_salaries = {}
+            for e in employees:
+                d_name = e.get("department", "Unassigned")
+                dept_salaries[d_name] = dept_salaries.get(d_name, 0.0) + float(e.get("salary", 0))
 
             return {
                 "domain": "HR & Employee Directory",
                 "domain_key": "hr_leave",
                 "total_employees": len(employees),
                 "employees": employees,
+                "total_salary_payroll": total_salary,
+                "average_salary": avg_salary,
+                "salary_by_department": dept_salaries,
                 "leave_requests": leave_requests,
                 "pending_leave_requests": pending_leaves,
                 "departments": departments,
@@ -211,11 +236,17 @@ class EnterpriseContextRetriever:
                         entity_found = False
                         not_found_reason = f"Vendor '{cand}' was not found in accounts payable invoices or document files."
 
+            total_invoice_amt = sum(float(i.get("amount", 0)) for i in invoices)
+            unpaid_invoices = [i for i in invoices if i.get("status") in ("PENDING", "UNPAID")]
+            unpaid_amt = sum(float(i.get("amount", 0)) for i in unpaid_invoices)
+
             return {
                 "domain": "Finance & Accounts Payable",
                 "domain_key": "invoice",
                 "total_invoices_in_ledger": len(invoices),
                 "invoices_in_ledger": invoices,
+                "total_invoices_amount": total_invoice_amt,
+                "unpaid_invoices_amount": unpaid_amt,
                 "matched_invoices": matched_invoices,
                 "available_invoice_files": invoice_files,
                 "entity_found": entity_found,
@@ -223,7 +254,7 @@ class EnterpriseContextRetriever:
                 "queried_entity": queried_entity,
                 "search_status": "FOUND" if entity_found else "NO_DATA_FOUND",
                 "procurement_policy": procurement_policy or "Net-30 payment terms standard. Invoices >$3,000 require CFO sign-off.",
-                "pending_payable_count": len([i for i in invoices if i.get("status") in ("PENDING", "UNPAID")])
+                "pending_payable_count": len(unpaid_invoices)
             }
 
         # DOMAIN 3: IT SUPPORT & HELPDESK TICKETS
@@ -252,8 +283,8 @@ class EnterpriseContextRetriever:
             elif assignee_match:
                 cand = assignee_match.group(1).strip()
                 if cand.lower() not in ("someone", "engineer", "staff", "agent", "senior engineer", "anyone"):
-                    has_assignee = any(cand.lower() in e.get("name", "").lower() for e in all_emp)
-                    if not has_assignee:
+                    matched_emp = next((e for e in all_emp if e.get("name", "").lower() in cand.lower() or cand.lower() in e.get("name", "").lower()), None)
+                    if not matched_emp:
                         queried_entity = cand
                         entity_found = False
                         not_found_reason = f"Engineer/staff member '{cand}' was not found in the employee directory."
@@ -310,10 +341,15 @@ class EnterpriseContextRetriever:
                         entity_found = False
                         not_found_reason = f"Inventory item '{cand}' was not found in warehouse catalog."
 
+            total_inv_val = sum(float(i.get("stock_on_hand", 0)) * float(i.get("unit_cost", 0)) for i in catalog)
+            total_units = sum(int(i.get("stock_on_hand", 0)) for i in catalog)
+
             return {
                 "domain": "Inventory Catalog & Warehouse Procurement",
                 "domain_key": "inventory",
                 "total_catalog_items": len(catalog),
+                "total_inventory_valuation": total_inv_val,
+                "total_units_on_hand": total_units,
                 "all_items": catalog,
                 "target_item": target_item,
                 "items_below_reorder_threshold": low_stock,
@@ -333,6 +369,7 @@ class EnterpriseContextRetriever:
 
             flagged = [e for e in expenses if e.get("amount", 0) > settings.HIGH_RISK_AMOUNT_THRESHOLD]
             pending = [e for e in expenses if e.get("status") == "PENDING"]
+            total_exp_amt = sum(float(e.get("amount", 0)) for e in expenses)
 
             # Entity presence validation
             entity_found = True
@@ -359,6 +396,7 @@ class EnterpriseContextRetriever:
                 "domain": "Employee Expenses & Policy Compliance",
                 "domain_key": "expense",
                 "total_expenses": len(expenses),
+                "total_expense_amount": total_exp_amt,
                 "all_expenses": expenses,
                 "flagged_over_threshold": flagged,
                 "pending_claims": pending,
@@ -377,8 +415,13 @@ class EnterpriseContextRetriever:
             expenses = get_all_expenses()
 
             # Highlight specific department if mentioned
-            dept_matches = [d for d in departments if d.get("name", "").lower() in p_lower]
-            target_dept = dept_matches[0] if dept_matches else None
+            target_dept = None
+            for d in departments:
+                d_name = d.get("name", "").lower()
+                words = [w for w in re.split(r'[\s&]+', d_name) if len(w) > 2]
+                if d_name in p_lower or any(w in p_lower for w in words):
+                    target_dept = d
+                    break
 
             # Entity presence validation
             entity_found = True
@@ -388,7 +431,8 @@ class EnterpriseContextRetriever:
             dept_match = re.search(r'(?:department|for)\s+([A-Za-z\s&]+?)(?:,|\.|\sbudget|\sexpenditure|\sand|$)', prompt, re.IGNORECASE)
             if dept_match:
                 cand = dept_match.group(1).strip()
-                if cand.lower() not in ("all", "q3", "the", "our", "total", "each", "any", "marketing", "engineering", "sales", "hr", "it", "finance"):
+                stop_words = ("all", "q3", "the", "our", "total", "each", "any", "department", "budget", "variance", "allocated", "company", "marketing", "engineering", "sales", "hr", "it", "finance")
+                if cand.lower() not in stop_words:
                     if not target_dept and not any(cand.lower() in d.get("name", "").lower() for d in departments):
                         queried_entity = cand
                         entity_found = False
@@ -471,6 +515,8 @@ class EnterpriseContextRetriever:
     @classmethod
     def get_domain_summary(cls, domain: str) -> str:
         """Returns a concise human-readable summary badge string for the given domain."""
+        if domain in ("auto", "", "all"):
+            return "Multi-Domain Active Ledger | 8 Enterprise Domains"
         ctx = cls.retrieve(domain)
         dom = ctx.get("domain_key", domain)
         if dom == "hr_leave":

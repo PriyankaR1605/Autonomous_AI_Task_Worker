@@ -38,6 +38,8 @@ Your duties:
    - List the available records or entities that DO exist in the dataset to assist the user.
 """
 
+    _quota_exhausted: bool = False
+
     @classmethod
     async def process_task(
         cls,
@@ -52,6 +54,16 @@ Your duties:
         Sends the user task and real enterprise data to Gemini or configured AI model.
         Returns: (ai_response_text, model_used_name)
         """
+        # If API quota was previously detected as exhausted, fast-fail directly to Local Intelligence
+        if cls._quota_exhausted:
+            local_result = cls._local_enterprise_reasoning(
+                task_instruction=task_instruction,
+                domain=domain,
+                enterprise_context=enterprise_context,
+                operational_context=operational_context
+            )
+            return local_result, "CentrAlign Local Intelligence Engine"
+
         effective_key = (api_key or settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
         selected_model = (model_name or settings.DEFAULT_MODEL or "gemini/gemini-1.5-flash").strip()
 
@@ -84,7 +96,9 @@ Your duties:
                         {"role": "user", "content": user_message}
                     ],
                     api_key=effective_key,
-                    temperature=0.2
+                    temperature=0.2,
+                    timeout=8,
+                    num_retries=1
                 )
                 ai_text = response.choices[0].message.content.strip()
                 return ai_text, f"AI Model: {clean_model}"
@@ -93,6 +107,7 @@ Your duties:
                 logger.warning(f"LiteLLM completion encountered issue: {err_str}.")
                 if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
                     logger.info("API quota exhausted. Transitioning directly to Local Intelligence Engine.")
+                    cls._quota_exhausted = True
                     local_result = cls._local_enterprise_reasoning(
                         task_instruction=task_instruction,
                         domain=domain,
@@ -139,6 +154,7 @@ Your duties:
                                             return ai_text, f"Gemini API ({mdl})"
                                 elif resp.status_code == 429:
                                     logger.info(f"Gemini model {mdl} quota exhausted (HTTP 429). Fast-failing to Local Reasoner.")
+                                    cls._quota_exhausted = True
                                     break
                                 elif resp.status_code == 503:
                                     logger.warning(f"Gemini model {mdl} busy (HTTP {resp.status_code}). Trying next fallback candidate...")
@@ -187,54 +203,150 @@ Your duties:
             )
 
         # Domain A: HR & Employee Management
-        if domain in ("hr_leave", "hr", "employee", "leave") or "sarah jenkins" in p_lower or "leave" in p_lower:
+        if domain in ("hr_leave", "hr", "employee", "leave"):
+            all_emps = enterprise_context.get("employees", [])
             emp = enterprise_context.get("target_employee")
+
+            # Check if operational results have employee_name
+            if not emp and op.get("employee_name"):
+                emp = next((e for e in all_emps if e.get("name", "").lower() == op.get("employee_name", "").lower()), None)
+
+            # Check if an employee name was mentioned in prompt
+            if not emp:
+                sorted_emps = sorted(all_emps, key=lambda x: len(x.get("name", "")), reverse=True)
+                for e in sorted_emps:
+                    n = e.get("name", "").strip()
+                    if n and n.lower() in p_lower:
+                        emp = e
+                        break
 
             # Validate whether a specific employee was requested but does not exist
             emp_match = re.search(r'(?:employee|for|staff)\s+([A-Za-z\s]+?)(?:,|\.|\scheck|\sapprove|\sand|\'s|$)', task_instruction, re.IGNORECASE)
+            code_match = re.search(r'\b(EMP-\d+)\b', task_instruction, re.IGNORECASE)
+            cand = None
             if emp_match:
                 cand = emp_match.group(1).strip()
-                if cand.lower() not in ("all", "all employees", "leave", "vacation", "each", "any", "staff", "a", "an", "the"):
-                    if not emp:
-                        all_emps = enterprise_context.get("employees", [])
-                        emp_names = ", ".join(e.get("name", "") for e in all_emps[:6])
-                        return (
-                            f"### ⚠️ No Data Found\n\n"
-                            f"No employee records matching **'{cand}'** were found in the HR employee directory.\n\n"
-                            f"**Available Employees in Dataset:**\n"
-                            f"- {emp_names} (and others in the Master Employees Table).\n\n"
-                            f"*(💡 Please verify the spelling or employee code and try again.)*"
-                        )
+            elif code_match:
+                cand = code_match.group(1).strip().upper()
 
-            if not emp:
-                emp = next((e for e in enterprise_context.get("employees", []) if "sarah" in e.get("name", "").lower()), None)
+            if cand and cand.lower() not in ("all", "all employees", "leave", "vacation", "each", "any", "staff", "a", "an", "the", "our", "me", "new"):
+                if not emp:
+                    emp_names = ", ".join(e.get("name", "") for e in all_emps[:6])
+                    return (
+                        f"### ⚠️ No Data Found\n\n"
+                        f"No employee records matching **'{cand}'** were found in the HR employee directory.\n\n"
+                        f"**Available Employees in Dataset:**\n"
+                        f"- {emp_names} (and others in the Master Employees Table).\n\n"
+                        f"*(💡 Please verify the spelling or employee code and try again.)*"
+                    )
 
             reqs = enterprise_context.get("leave_requests", [])
-            pending_req = next((r for r in reqs if emp and emp.get("name", "").lower() in r.get("emp_name", "").lower() and r.get("status") == "PENDING"), None)
-            if not pending_req:
-                pending_req = next((r for r in reqs if r.get("status") == "PENDING"), None)
+            is_approval = any(w in p_lower for w in ("approve", "pending", "leave request", "vacation request", "update the hr system"))
+            is_salary = any(w in p_lower for w in ("salary", "compensation", "earn", "pay", "wage", "package"))
+            is_balance = any(w in p_lower for w in ("balance", "pto", "remaining leave", "days off", "how many days"))
 
             if emp:
+                pending_req = next((r for r in reqs if emp.get("name", "").lower() in r.get("emp_name", "").lower() and r.get("status") == "PENDING"), None)
+                if not pending_req and op.get("req_code"):
+                    pending_req = next((r for r in reqs if r.get("req_code") == op.get("req_code")), None)
+
                 days = pending_req.get("days_requested", 4) if pending_req else 4
                 bal_before = emp.get("leave_balance", 20)
-                bal_after = op.get("updated_leave_balance", max(0, bal_before - days))
-                
-                return (
-                    f"### 👥 HR Operations & Leave Approval Report\n\n"
-                    f"**Employee Profile:**\n"
-                    f"- **Name:** {emp.get('name')} (`{emp.get('emp_code')}`)\n"
-                    f"- **Department:** {emp.get('department')} | **Role:** {emp.get('title')}\n"
-                    f"- **Reporting Manager:** {emp.get('manager_name')}\n"
-                    f"- **Annual Compensation:** ${emp.get('salary', 0):,.2f} USD\n\n"
-                    f"**Leave Request Analysis & Action:**\n"
-                    f"- **Request ID:** {pending_req.get('req_code', 'LV-2026-001') if pending_req else 'LV-2026-001'}\n"
-                    f"- **Leave Type:** Annual Vacation ({days} business days)\n"
-                    f"- **Previous PTO Balance:** {bal_before} days\n"
-                    f"- **Approval Status:** **APPROVED** (Policy Compliance Verified)\n"
-                    f"- **Updated Remaining Balance:** **{bal_after} days**\n\n"
-                    f"✅ **Database Confirmation:** The employee record and leave ledger have been updated and reconciled in the HR database.\n\n"
-                    f"*(💡 Note: Configure GEMINI_API_KEY in your environment (.env) to process arbitrary HR prompts with live Gemini 1.5/2.0 Flash!)*"
-                )
+                bal_after = op.get("updated_leave_balance", max(0, bal_before - (days if pending_req else 0)))
+
+                if is_salary:
+                    return (
+                        f"### 👥 HR Compensation Profile: {emp.get('name')}\n\n"
+                        f"- **Employee Code:** `{emp.get('emp_code')}`\n"
+                        f"- **Department:** {emp.get('department')}\n"
+                        f"- **Role / Title:** {emp.get('title')}\n"
+                        f"- **Reporting Manager:** {emp.get('manager_name')}\n"
+                        f"- **Annual Compensation:** **${emp.get('salary', 0):,.2f} USD**\n"
+                        f"- **Employment Status:** {emp.get('status', 'ACTIVE')}\n\n"
+                        f"✅ **Database Confirmation:** Retrieved from authentic HR payroll directory."
+                    )
+                elif is_balance and not is_approval:
+                    req_str = f"Request {pending_req.get('req_code')} ({pending_req.get('days_requested')} days)" if pending_req else "None awaiting approval"
+                    return (
+                        f"### 👥 HR Leave & PTO Status: {emp.get('name')}\n\n"
+                        f"- **Employee:** {emp.get('name')} (`{emp.get('emp_code')}`)\n"
+                        f"- **Department:** {emp.get('department')} | **Role:** {emp.get('title')}\n"
+                        f"- **Current Available PTO Balance:** **{emp.get('leave_balance')} days**\n"
+                        f"- **Annual Allocation:** 20 days standard PTO\n"
+                        f"- **Pending Requests:** {req_str}\n\n"
+                        f"✅ **Database Confirmation:** Verified against enterprise leave ledger."
+                    )
+                elif is_approval and pending_req:
+                    return (
+                        f"### 👥 HR Operations & Leave Approval Report\n\n"
+                        f"**Employee Profile:**\n"
+                        f"- **Name:** {emp.get('name')} (`{emp.get('emp_code')}`)\n"
+                        f"- **Department:** {emp.get('department')} | **Role:** {emp.get('title')}\n"
+                        f"- **Reporting Manager:** {emp.get('manager_name')}\n"
+                        f"- **Annual Compensation:** ${emp.get('salary', 0):,.2f} USD\n\n"
+                        f"**Leave Request Analysis & Action:**\n"
+                        f"- **Request ID:** {pending_req.get('req_code', 'LV-2026-001')}\n"
+                        f"- **Leave Type:** {pending_req.get('leave_type', 'Annual Vacation')} ({days} business days)\n"
+                        f"- **Previous PTO Balance:** {bal_before} days\n"
+                        f"- **Approval Status:** **APPROVED** (Policy Compliance Verified)\n"
+                        f"- **Updated Remaining Balance:** **{bal_after} days**\n\n"
+                        f"✅ **Database Confirmation:** The employee record and leave ledger have been updated and reconciled in the HR database."
+                    )
+                elif is_approval and not pending_req:
+                    return (
+                        f"### 👥 HR Operations Status: {emp.get('name')}\n\n"
+                        f"**Employee Profile:**\n"
+                        f"- **Name:** {emp.get('name')} (`{emp.get('emp_code')}`)\n"
+                        f"- **Department:** {emp.get('department')} | **Role:** {emp.get('title')}\n"
+                        f"- **Current Leave Balance:** **{bal_before} days** PTO remaining\n\n"
+                        f"**Leave Request Status:**\n"
+                        f"- There are currently no unapproved or pending leave requests awaiting approval for **{emp.get('name')}**.\n\n"
+                        f"✅ **Database Confirmation:** HR directory record verified."
+                    )
+                else:
+                    return (
+                        f"### 👥 HR Employee Profile: {emp.get('name')}\n\n"
+                        f"- **Employee Code:** `{emp.get('emp_code')}`\n"
+                        f"- **Role / Title:** {emp.get('title')}\n"
+                        f"- **Department:** {emp.get('department')}\n"
+                        f"- **Reporting Manager:** {emp.get('manager_name')}\n"
+                        f"- **Hire Date:** {emp.get('hire_date', 'N/A')}\n"
+                        f"- **Annual Compensation:** ${emp.get('salary', 0):,.2f} USD\n"
+                        f"- **Leave Balance:** **{emp.get('leave_balance')} days PTO**\n"
+                        f"- **Status:** {emp.get('status', 'ACTIVE')}\n\n"
+                        f"✅ **Database Confirmation:** Verified authentic enterprise HR record."
+                    )
+            else:
+                # No specific employee requested
+                pending_reqs = enterprise_context.get("pending_leave_requests", []) or [r for r in reqs if r.get("status") == "PENDING"]
+                if is_approval and op.get("req_code"):
+                    return (
+                        f"### 👥 HR Leave Approval Execution Report\n\n"
+                        f"- **Employee:** {op.get('employee_name', 'Staff Member')}\n"
+                        f"- **Request Code:** `{op.get('req_code')}`\n"
+                        f"- **Days Approved:** {op.get('days_requested', 2)} days\n"
+                        f"- **Updated Balance:** **{op.get('updated_leave_balance')} days** remaining\n"
+                        f"- **Status:** **APPROVED** in Enterprise HR Ledger\n\n"
+                        f"✅ **Database Confirmation:** Persisted and reconciled in database."
+                    )
+                elif "pending" in p_lower or "queue" in p_lower:
+                    req_lines = "\n".join(f"- `{r.get('req_code')}`: **{r.get('emp_name')}** — {r.get('leave_type')} ({r.get('days_requested')} days, {r.get('start_date')} to {r.get('end_date')})" for r in pending_reqs[:5])
+                    return (
+                        f"### 👥 Pending HR Leave Requests Queue\n\n"
+                        f"Total Pending Requests: **{len(pending_reqs)}**\n\n"
+                        f"{req_lines}\n\n"
+                        f"*(💡 To approve a specific request, instruct: 'Approve pending leave request for [Employee Name]'.)*"
+                    )
+                else:
+                    total_sal = enterprise_context.get("total_salary_payroll", 0)
+                    return (
+                        f"### 👥 Enterprise HR & Personnel Overview\n\n"
+                        f"- **Total Active Employees:** {len(all_emps)} personnel\n"
+                        f"- **Total Annual Payroll:** ${total_sal:,.2f} USD\n"
+                        f"- **Pending Leave Requests:** {len(pending_reqs)} in queue\n"
+                        f"- **Standard Annual Leave:** 20 days PTO per employee\n\n"
+                        f"✅ **Database Confirmation:** Corporate HR database active and synced."
+                    )
 
         # Domain B: Commercial Invoices & AP
         elif domain in ("invoice", "finance", "ap") or "company x" in p_lower or "invoice" in p_lower:
@@ -304,17 +416,39 @@ Your duties:
             )
 
         # Domain D: Inventory & Restock
-        elif domain in ("inventory", "supply_chain") or "inventory" in p_lower or "reorder" in p_lower:
+        elif domain in ("inventory", "supply_chain") or "inventory" in p_lower or "reorder" in p_lower or "stock" in p_lower or "sku" in p_lower:
+            catalog = enterprise_context.get("all_items", [])
+            target_item = enterprise_context.get("target_item")
+            if not target_item:
+                for item in catalog:
+                    i_name = item.get("item_name", "").lower()
+                    words = [w for w in re.split(r'\W+', i_name) if len(w) > 3]
+                    if item.get("sku", "").lower() in p_lower or any(w in p_lower for w in words):
+                        target_item = item
+                        break
+
             sku_match = re.search(r'\b(SKU-[A-Za-z0-9\-]+)\b', task_instruction, re.IGNORECASE)
             if sku_match:
                 s_id = sku_match.group(1).strip().upper()
-                catalog = enterprise_context.get("all_items", [])
                 if not any(i.get("sku", "").upper() == s_id for i in catalog):
                     return (
                         f"### ⚠️ No Data Found\n\n"
                         f"No inventory item matching SKU **'{s_id}'** was found in the warehouse catalog.\n\n"
                         f"*(💡 Please verify the SKU and try again.)*"
                     )
+
+            if target_item and any(w in p_lower for w in ("price", "cost", "how much", "stock", "quantity", "details", "where", "find", "available", "check")):
+                return (
+                    f"### 📦 Warehouse Inventory Record: {target_item['item_name']}\n\n"
+                    f"- **Product SKU:** `{target_item['sku']}`\n"
+                    f"- **Item Name:** {target_item['item_name']}\n"
+                    f"- **Unit Price / Cost:** **${target_item['unit_cost']:,.2f} USD**\n"
+                    f"- **Current Stock on Hand:** **{target_item['stock_on_hand']} units**\n"
+                    f"- **Reorder Threshold:** {target_item['reorder_threshold']} units (Target Capacity: {target_item['target_reorder_qty']})\n"
+                    f"- **Warehouse Location:** {target_item['warehouse_location']}\n"
+                    f"- **Preferred Supplier:** {target_item['supplier']}\n\n"
+                    f"✅ **Database Confirmation:** Retrieved from authentic enterprise warehouse catalog."
+                )
 
             po_num = op.get("po_number", "PO-2026-AUTO-01")
             supplier = op.get("supplier", "Dell Enterprise Store")
@@ -346,9 +480,9 @@ Your duties:
                         f"*(💡 Please verify the expense report number and try again.)*"
                     )
 
-            rep_num = op.get("report_number", "EXP-2026-101")
-            emp_name = op.get("employee_name", "Sarah Jenkins")
-            amt = op.get("amount", 1250.00)
+            rep_num = op.get("report_number", "EXP-2026-115")
+            emp_name = op.get("employee_name", "Winston Bishop")
+            amt = op.get("amount", 450.00)
 
             return (
                 f"### 💰 Employee Expense Policy Compliance Audit\n\n"
@@ -363,12 +497,22 @@ Your duties:
 
         # Domain F: Budgets & Analytics
         elif domain in ("budget", "analytics") or "budget" in p_lower or "variance" in p_lower:
+            departments = enterprise_context.get("departments", [])
+            target_dept = enterprise_context.get("target_department")
+            if not target_dept:
+                for d in departments:
+                    d_name = d.get("name", "").lower()
+                    words = [w for w in re.split(r'[\s&]+', d_name) if len(w) > 2]
+                    if d_name in p_lower or any(w in p_lower for w in words):
+                        target_dept = d
+                        break
+
             dept_match = re.search(r'(?:department|for)\s+([A-Za-z\s&]+?)(?:,|\.|\sbudget|\sexpenditure|\sand|$)', task_instruction, re.IGNORECASE)
             if dept_match:
                 cand = dept_match.group(1).strip()
-                if cand.lower() not in ("all", "q3", "the", "our", "total", "each", "any", "marketing", "engineering", "sales", "hr", "it", "finance"):
-                    departments = enterprise_context.get("departments", [])
-                    if not any(cand.lower() in d.get("name", "").lower() for d in departments):
+                stop_words = ("all", "q3", "the", "our", "total", "each", "any", "department", "budget", "variance", "allocated", "company", "marketing", "engineering", "sales", "hr", "it", "finance")
+                if cand.lower() not in stop_words:
+                    if not target_dept and not any(cand.lower() in d.get("name", "").lower() for d in departments):
                         dept_names = ", ".join(d.get("name", "") for d in departments)
                         return (
                             f"### ⚠️ No Data Found\n\n"
@@ -378,10 +522,10 @@ Your duties:
                             f"*(💡 Please verify the department name and try again.)*"
                         )
 
-            dept = op.get("department", "Marketing & Growth")
-            budget = op.get("budget", 450000.00)
-            spent = op.get("spent", 382400.00)
-            var = op.get("variance", 67600.00)
+            dept = op.get("department") or (target_dept.get("name") if target_dept else "Marketing & Growth")
+            budget = op.get("budget") or (target_dept.get("budget_q3") if target_dept else 450000.00)
+            spent = op.get("spent") or (target_dept.get("spent_q3") if target_dept else 382400.00)
+            var = op.get("variance") or (budget - spent)
 
             return (
                 f"### 📊 Department Budget & Financial Analytics Report\n\n"
