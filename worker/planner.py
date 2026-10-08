@@ -83,7 +83,7 @@ class TaskPlanner:
             or (re.search(r'\b(?:product|products)\b', p_lower) and not is_budget and "product development" not in p_lower and "production" not in p_lower)
         )
         is_expense = any(w in p_lower for w in ("expense", "exp-", "reimbursement", "spending policy", "credit card", "merchant", "expense claim", "expense report", "receipt"))
-        is_policy = any(w in p_lower for w in ("policy", "policies", "handbook", "iso 27001", "soc 2", "compliance standard", "governance", "rules", "guidelines"))
+        is_policy = any(w in p_lower for w in ("policy", "policies", "handbook", "iso 27001", "soc 2", "compliance standard", "governance", "rules", "guidelines", "approval threshold", "procurement threshold", "contract threshold"))
         
         emp_name = self.extract_target_employee(prompt)
         is_hr = (

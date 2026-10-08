@@ -297,10 +297,13 @@ class AutonomousWorker:
             self.state.final_summary = f"Extraction failed: {res_2.output}"
             return
 
-        extracted = res_2.data
+        extracted = res_2.data if isinstance(res_2.data, dict) else {}
         self.state.working_memory.update(extracted)
         m2.status = StepStatus.SUCCESS
-        m2.result_summary = f"Extracted: Amount=${extracted['amount']:.2f}, Due={extracted['due_date']}, Invoice={extracted.get('invoice_number')}"
+        inv_amt = float(extracted.get("amount", 0.0) or 0.0)
+        inv_due = str(extracted.get("due_date", "N/A"))
+        inv_no = str(extracted.get("invoice_number", "N/A"))
+        m2.result_summary = f"Extracted: Amount=${inv_amt:.2f}, Due={inv_due}, Invoice={inv_no}"
         await asyncio.sleep(settings.STEP_DELAY_SECONDS)
 
         # M3: Safety & Risk Assessment
