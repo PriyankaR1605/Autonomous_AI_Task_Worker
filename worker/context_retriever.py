@@ -95,12 +95,72 @@ class EnterpriseContextRetriever:
         return cls.load_doc_text(filename, "company_docs")
 
     @classmethod
+    def find_mentioned_data_files(cls, prompt: str) -> Dict[str, Any]:
+        r"""
+        Scans D:\Projects\CentrAlign_AI_Project\data for any specific file names, table names,
+        or documents explicitly referenced in the user prompt.
+        """
+        results = {}
+        if not prompt:
+            return results
+        p_lower = prompt.lower()
+        search_dirs = [settings.DOCS_DIR, settings.INVOICES_DIR, settings.TABLES_DIR]
+        for s_dir in search_dirs:
+            if not os.path.exists(s_dir):
+                continue
+            for fname in os.listdir(s_dir):
+                base_name = os.path.splitext(fname)[0].lower()
+                clean_name = re.sub(r'[^a-zA-Z0-9]', '', base_name)
+                clean_prompt = re.sub(r'[^a-zA-Z0-9]', '', p_lower)
+                if (fname.lower() in p_lower) or (len(clean_name) > 6 and clean_name in clean_prompt):
+                    full_p = os.path.join(s_dir, fname)
+                    if fname.endswith(".txt"):
+                        try:
+                            with open(full_p, "r", encoding="utf-8") as f:
+                                results[fname] = f.read()
+                        except Exception:
+                            pass
+                    elif fname.endswith(".json"):
+                        try:
+                            with open(full_p, "r", encoding="utf-8") as f:
+                                results[fname] = json.load(f)
+                        except Exception:
+                            pass
+                    elif fname.endswith(".csv"):
+                        try:
+                            import csv
+                            with open(full_p, "r", encoding="utf-8") as f:
+                                results[fname] = list(csv.DictReader(f))
+                        except Exception:
+                            pass
+                    elif fname.endswith(".pdf") and (fname not in results and f"{base_name}.txt" not in results):
+                        try:
+                            import pypdf
+                            reader = pypdf.PdfReader(full_p)
+                            results[fname] = "\n".join(page.extract_text() or "" for page in reader.pages)
+                        except Exception:
+                            pass
+        return results
+
+    @classmethod
     def retrieve(cls, domain: str, prompt: str = "") -> Dict[str, Any]:
         """
         Retrieves real company records, database entries, and relevant policy clauses
         directly from D:\\Projects\\CentrAlign_AI_Project\\data for the given domain
         or natural language query.
         """
+        ctx = cls._retrieve_domain_data(domain, prompt)
+        mentioned = cls.find_mentioned_data_files(prompt)
+        if mentioned:
+            ctx["mentioned_backend_files"] = mentioned
+            source_files = ctx.setdefault("source_files_loaded", [])
+            for fname in mentioned.keys():
+                if fname not in str(source_files):
+                    source_files.append(f"data/{fname}")
+        return ctx
+
+    @classmethod
+    def _retrieve_domain_data(cls, domain: str, prompt: str = "") -> Dict[str, Any]:
         domain_clean = (domain or "").lower().strip()
         p_lower = (prompt or "").lower()
 
@@ -600,6 +660,14 @@ class EnterpriseContextRetriever:
                 "source_files_loaded": source_files,
                 "company_profile": profile,
                 "departments": departments,
+                "employees": employees,
+                "support_tickets": tickets,
+                "inventory": inventory,
+                "invoices": invoices,
+                "customers": customers,
+                "deals": deals,
+                "expenses": expenses,
+                "master_dataset": master_dataset.get("domains", {}) if isinstance(master_dataset, dict) else master_dataset,
                 "master_dataset_summary": {
                     "total_employees": len(employees),
                     "total_invoices": len(invoices),

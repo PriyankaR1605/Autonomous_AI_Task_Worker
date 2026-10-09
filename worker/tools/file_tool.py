@@ -23,13 +23,16 @@ class FileSearchTool(BaseTool):
                 if os.path.exists(custom_dir):
                     search_dirs.append(custom_dir)
             else:
-                # Default search across all document repositories
+                # Default search across all data repositories
                 docs_dir = os.path.join(settings.DATA_DIR, "company_docs")
                 invoices_dir = settings.INVOICES_DIR
+                tables_dir = getattr(settings, "TABLES_DIR", os.path.join(settings.DATA_DIR, "enterprise_tables"))
                 if os.path.exists(invoices_dir):
                     search_dirs.append(invoices_dir)
                 if os.path.exists(docs_dir):
                     search_dirs.append(docs_dir)
+                if os.path.exists(tables_dir):
+                    search_dirs.append(tables_dir)
 
             if not search_dirs:
                 return ToolResult(
@@ -46,7 +49,7 @@ class FileSearchTool(BaseTool):
             for s_dir in search_dirs:
                 for root, _, files in os.walk(s_dir):
                     for filename in files:
-                        if not (filename.endswith(".pdf") or filename.endswith(".txt") or filename.endswith(".md")):
+                        if not (filename.endswith(".pdf") or filename.endswith(".txt") or filename.endswith(".md") or filename.endswith(".csv") or filename.endswith(".json")):
                             continue
 
                         clean_fname = re.sub(r'[^a-zA-Z0-9]', '', filename.lower())
