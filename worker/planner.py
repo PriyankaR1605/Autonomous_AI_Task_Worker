@@ -85,14 +85,18 @@ class TaskPlanner:
         is_expense = any(w in p_lower for w in ("expense", "exp-", "reimbursement", "spending policy", "credit card", "merchant", "expense claim", "expense report", "receipt"))
         is_policy = any(w in p_lower for w in ("policy", "policies", "handbook", "iso 27001", "soc 2", "compliance standard", "governance", "rules", "guidelines", "approval threshold", "procurement threshold", "contract threshold"))
         
+        is_crm = any(w in p_lower for w in ("crm", "customer", "customers", "client", "clients", "deal", "deals", "sales pipeline", "contract tier", "annual contract", "arr", "account executive"))
+        
         emp_name = self.extract_target_employee(prompt)
         is_hr = (
             any(w in p_lower for w in ("leave", "vacation", "pto", "time off", "time-off", "hire date", "salary", "compensation", "payroll", "headcount", "personnel"))
-            or (emp_name is not None and not is_ticket and not is_expense and not is_invoice and not is_inventory and not is_budget and not is_policy)
+            or (emp_name is not None and not is_ticket and not is_expense and not is_invoice and not is_inventory and not is_budget and not is_policy and not is_crm)
             or ("employee" in p_lower and not is_expense and not is_policy)
         )
 
         # If explicit domain override was provided (and not auto/general)
+        if d_override in ("crm", "customer", "sales"):
+            return "crm"
         if d_override in ("policy", "governance"):
             return "policy"
         if d_override in ("ticket", "it_support") and is_ticket:
@@ -112,6 +116,8 @@ class TaskPlanner:
             return "policy"
 
         # Primary natural language intent takes top priority
+        if is_crm:
+            return "crm"
         if is_invoice:
             return "invoice"
         if is_budget:
@@ -140,7 +146,37 @@ class TaskPlanner:
         domain = self.detect_domain(prompt, domain_override)
         p_lower = (prompt or "").lower()
 
-        # Domain A: Support Tickets / ITSM Helpdesk
+        # Check if the instruction is an operational mutation action (e.g. approve, reassign, register into ledger)
+        is_action = any(re.search(rf'\b{w}\b', p_lower) for w in (
+            "approve", "reassign", "assign to", "assign them to", "create po", "issue purchase order",
+            "register invoice into", "enter it into our internal", "submit expense", "deduct"
+        ))
+
+        # For informational, analytical, calculation, and reporting queries, plan data-driven milestones
+        if not is_action:
+            domain_name = domain.replace("_", " ").title()
+            return domain, [
+                Milestone(
+                    id=1,
+                    title=f"Load Enterprise Data ({domain_name})",
+                    description=f"Retrieve authentic records, documents, and policies for domain '{domain}' from the enterprise data repository.",
+                    status=StepStatus.PENDING
+                ),
+                Milestone(
+                    id=2,
+                    title=f"Analyze {domain_name} Records",
+                    description="Extract, compute, and structure domain metrics and policy criteria matching user query.",
+                    status=StepStatus.PENDING
+                ),
+                Milestone(
+                    id=3,
+                    title="AI Model Reasoning & Verification",
+                    description="Synthesize verified executive answer via Gemini AI model using authentic enterprise records.",
+                    status=StepStatus.PENDING
+                )
+            ]
+
+        # Domain A: Support Tickets / ITSM Helpdesk Action
         if domain == "ticket":
             assignee_match = re.search(r'assign(?:\s+them)?\s+to\s+([A-Za-z\s]+?)(?:,|\.|\sand|\smark|$)', prompt, re.IGNORECASE)
             assignee = assignee_match.group(1).strip() if assignee_match else "Alex Wong"

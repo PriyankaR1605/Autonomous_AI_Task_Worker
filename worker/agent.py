@@ -32,6 +32,7 @@ class AutonomousWorker:
         self,
         user_prompt: str,
         domain: Optional[str] = None,
+        custom_data: Optional[Any] = None,
         approval_callback: Optional[Callable[[ApprovalRequest], bool]] = None,
         use_browser: bool = True,
         step_callback: Optional[Callable[[ActionStep], None]] = None,
@@ -42,6 +43,7 @@ class AutonomousWorker:
             task_id=f"TASK-{uuid.uuid4().hex[:8].upper()}",
             user_prompt=user_prompt
         )
+        self.custom_data = custom_data
         self.domain = domain
         self.approval_callback = approval_callback
         self.use_browser = use_browser
@@ -129,6 +131,20 @@ class AutonomousWorker:
     async def run(self) -> AgentState:
         """Executes the full autonomous ReAct pipeline across any company domain."""
         try:
+            p_lower = self.state.user_prompt.lower()
+            
+            # Check if this task involves user-provided custom data
+            has_explicit_user_data = bool(self.custom_data)
+            has_embedded_data = any(w in p_lower for w in (
+                "here is my data", "here is the data", "given the following", "my data:", "data:", "dataset:"
+            ))
+            
+            # Check if the query is an operational mutation action (e.g. approve, reassign, register into system)
+            is_mutation_action = any(re.search(rf'\b{w}\b', p_lower) for w in (
+                "approve", "reassign", "assign them to", "create po", "issue purchase order",
+                "register invoice into", "enter it into our internal", "submit expense", "deduct"
+            ))
+
             # 1. Planning Phase
             self.state.status = TaskStatus.PLANNING
             domain, milestones = self.planner.parse_and_plan(
@@ -139,19 +155,70 @@ class AutonomousWorker:
             self.state.working_memory["domain"] = domain
             self.state.status = TaskStatus.EXECUTING
 
-            # 2. Authentic Enterprise Data Gathering Phase
-            # Retrieves authentic company database records and policies to feed to the AI model
+            # 2. Authentic Enterprise Data Gathering Phase from data/ folder
+            # Retrieves authentic company database records and policies directly from data/ to feed to the AI model
             retrieved = EnterpriseContextRetriever.retrieve(domain, self.state.user_prompt)
             self.state.retrieved_data = retrieved
+            files_loaded = retrieved.get("source_files_loaded", [])
+            files_str = ", ".join(files_loaded) if files_loaded else "ALL_DOMAINS_ENTERPRISE_MASTER_DATASET.json"
             self._log_step(
-                thought=f"Gathering authentic enterprise data for domain '{domain}' to supply directly to AI model.",
+                thought=f"Gathering authentic enterprise data for domain '{domain}' directly from data/ folder ({files_str}) to supply to AI model.",
                 tool_name="context_retriever",
-                tool_input={"domain": domain, "prompt": self.state.user_prompt},
-                tool_output=f"Enterprise context compiled successfully ({len(retrieved)} domain attributes: {list(retrieved.keys())}).",
+                tool_input={"domain": domain, "prompt": self.state.user_prompt, "files": files_loaded},
+                tool_output=f"Authentic enterprise data loaded successfully ({len(retrieved)} domain attributes). Source files: {files_str}.",
                 success=True
             )
 
-            # 3. Domain Execution Dispatcher
+            # Case A: Analytical / Informational / Question / Inquiry Pipeline (Non-mutation)
+            if not is_mutation_action or has_explicit_user_data or has_embedded_data:
+                # Milestone 1: Ingest Data
+                if len(milestones) >= 1:
+                    m1 = milestones[0]
+                    m1.status = StepStatus.IN_PROGRESS
+                    m1.status = StepStatus.SUCCESS
+                    m1.result_summary = f"Loaded {len(files_loaded)} domain data files from data/ directory."
+
+                # Milestone 2: Structure & Analyze Records
+                if len(milestones) >= 2:
+                    m2 = milestones[1]
+                    m2.status = StepStatus.IN_PROGRESS
+                    self._log_step(
+                        thought=f"Structuring records and policy clauses from {files_str} for analytical reasoning.",
+                        tool_name="analytics_engine",
+                        tool_input={"domain": domain, "attributes": list(retrieved.keys())},
+                        tool_output=f"Extracted {retrieved.get('domain')} context for query processing.",
+                        success=True
+                    )
+                    m2.status = StepStatus.SUCCESS
+                    m2.result_summary = f"Domain metrics compiled from {files_str}."
+
+                # Milestone 3: AI Model Reasoning
+                m_ai = milestones[2] if len(milestones) >= 3 else milestones[-1]
+                m_ai.status = StepStatus.IN_PROGRESS
+
+                ai_text, model_used = await EnterpriseAIEngine.process_task(
+                    task_instruction=self.state.user_prompt,
+                    domain=domain,
+                    enterprise_context=self.state.retrieved_data,
+                    operational_context=self.state.working_memory,
+                    custom_data=self.custom_data,
+                    api_key=self.api_key,
+                    model_name=self.model_name
+                )
+                self.state.ai_response = ai_text
+                self.state.model_used = model_used
+                self.state.final_summary = ai_text
+
+                m_ai.status = StepStatus.SUCCESS
+                m_ai.result_summary = f"Processed by {model_used}."
+                self.state.status = TaskStatus.COMPLETED
+
+                self.state.verification = OutcomeVerifier.verify(domain, {"prompt": self.state.user_prompt, "domain": domain})
+                report_path = EvidencePackager.generate_report(self.state)
+                self.state.evidence_report_path = report_path
+                return self.state
+
+            # Case B: Operational Mutation Actions (Approve, Reassign, Enter Invoice, Issue PO)
             if domain == "ticket":
                 await self._run_ticket_pipeline()
             elif domain in ("hr_leave", "leave"):
@@ -169,12 +236,13 @@ class AutonomousWorker:
             else:
                 await self._run_general_pipeline()
 
-            # 4. AI Model Processing Phase (Gemini / Generative AI Engine)
+            # AI Model Processing Phase for Operational Results
             ai_text, model_used = await EnterpriseAIEngine.process_task(
                 task_instruction=self.state.user_prompt,
                 domain=domain,
                 enterprise_context=self.state.retrieved_data,
                 operational_context=self.state.working_memory,
+                custom_data=self.custom_data,
                 api_key=self.api_key,
                 model_name=self.model_name
             )

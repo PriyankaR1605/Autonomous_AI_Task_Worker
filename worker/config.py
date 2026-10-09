@@ -7,7 +7,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
 class Settings:
     # Model configuration
-    DEFAULT_MODEL: str = os.getenv("DEFAULT_MODEL", "gemini/gemini-1.5-flash")
+    DEFAULT_MODEL: str = os.getenv("DEFAULT_MODEL", "gemini/gemini-3.5-flash-lite")
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     ANTHROPIC_API_KEY: Optional[str] = os.getenv("ANTHROPIC_API_KEY")

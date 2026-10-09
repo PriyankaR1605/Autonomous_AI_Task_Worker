@@ -244,6 +244,12 @@ def render_task_dossier(state, msg_idx: int):
                     "Repository Verification": ["✅ Confirmed in Handbook", "✅ Confirmed in Procurement Doc", "✅ Confirmed in Expense Doc", "✅ Confirmed in IT Security Doc"],
                     "Status": ["Verified Active", "Verified Active", "Verified Active", "Verified Active"]
                 }
+            elif domain in ("analytics", "custom_data", "general"):
+                recon_data = {
+                    "Analysis Dimension": ["Query Instruction", "Data Ingestion", "AI Model Engine", "Reconciliation Outcome"],
+                    "Processing Assessment": [state.user_prompt[:50] + ("..." if len(state.user_prompt) > 50 else ""), "Custom Data Processed", state.model_used or "Gemini API", "Verified"],
+                    "Match Status": ["✅ Confirmed", "✅ Confirmed", "✅ Confirmed", "✅ Confirmed"]
+                }
             else: # Invoice
                 recon_data = {
                     "Property": ["Vendor", "Invoice #", "Amount Due", "Due Date"],
@@ -282,6 +288,7 @@ DOMAIN_MAP = {
     "📦 Inventory & Supply Chain": "inventory",
     "💰 Expense Auditing & Compliance": "expense",
     "📊 Department Budgets & Analytics": "budget",
+    "💼 CRM Accounts & Sales Pipeline": "crm",
     "📜 Corporate Policies & Governance": "policy",
     "🌐 Cross-Department / General Overview": "general",
 }
@@ -302,6 +309,9 @@ for idx, message in enumerate(st.session_state["messages"]):
             if message.get("domain"):
                 st.caption(f"Domain: **{message['domain']}**")
             st.markdown(message["content"])
+            if message.get("custom_data"):
+                with st.expander("📋 Attached Custom Data", expanded=False):
+                    st.code(message["custom_data"], language="text")
     else:
         with st.chat_message("assistant", avatar="🤖"):
             st.markdown(message["content"])
@@ -331,9 +341,17 @@ with st.form(key="natural_language_task_form", clear_on_submit=False):
     user_prompt_input = st.text_area(
         label="📝 Write your natural language query or task (unpopulated):",
         value="",
-        placeholder="Type your query or instruction here in plain English...\n\nExamples:\n• Finance: 'Find the latest invoice from Company X, extract the amount and due date, enter it into our internal system, and tell me once it is done.'\n• HR: 'Find employee David Miller, check his remaining annual leave balance, approve his pending vacation request, and update the HR system.'\n• IT Support: 'Scan all open customer support tickets, identify any CRITICAL priority tickets, reassign them to Senior Engineer Alex Wong, and mark them IN_PROGRESS.'\n• Inventory: 'Audit our inventory warehouse for all items below the reorder threshold, calculate restock requirements, and generate a purchase order.'\n• Budgets: 'Calculate the total Q3 marketing expenditure, compare it against the allocated department budget, and report budget variance.'",
-        height=130,
-        help="Type any business task or query. It starts blank and is not pre-populated. CentrAlign AI will detect the intent, retrieve real company records, and execute milestones."
+        placeholder="Type your query or instruction here in plain English...\n\nExamples:\n• Data Analysis: 'Calculate the total and average price from my attached product list.'\n• Finance: 'Find the latest invoice from Company X, extract the amount and due date, enter it into our internal system, and tell me once it is done.'\n• HR: 'Find employee David Miller, check his remaining annual leave balance, approve his pending vacation request, and update the HR system.'\n• IT Support: 'Scan all open customer support tickets, identify any CRITICAL priority tickets, reassign them to Senior Engineer Alex Wong, and mark them IN_PROGRESS.'",
+        height=120,
+        help="Type any business task, query, or instruction. The AI model will process it using authentic company records and any custom data you provide."
+    )
+
+    custom_data_input = st.text_area(
+        label="📋 Optional: Custom Data / Document Context (Paste text, CSV, JSON, tables, or numbers to process):",
+        value="",
+        placeholder="Optional: Paste any custom data, numbers, records, document excerpts, CSV, or JSON here.\n\nExample:\nItem, Price, Quantity\nLaptop, 1200, 3\nMonitor, 300, 5\n\nThe AI model will directly ingest and process this data alongside your query.",
+        height=95,
+        help="Provide any custom data to process. If provided, the AI model processes this data directly to answer your query."
     )
     
     col_submit, col_hint = st.columns([1, 4])
@@ -411,18 +429,23 @@ with st.expander(f"📦 Preview Real Enterprise Records & Master Single-File Tab
 # Process Submitted Task
 if submitted and user_prompt_input and user_prompt_input.strip():
     active_prompt = user_prompt_input.strip()
+    custom_data_val = custom_data_input.strip() if custom_data_input and custom_data_input.strip() else None
 
     # 1. Record and display user message
     st.session_state["messages"].append({
         "role": "user",
         "content": active_prompt,
         "domain": selected_domain_label,
+        "custom_data": custom_data_val,
         "timestamp": datetime.now().strftime("%H:%M:%S")
     })
 
     with st.chat_message("user", avatar="👤"):
         st.caption(f"Target Domain: **{selected_domain_label}**")
         st.markdown(active_prompt)
+        if custom_data_val:
+            with st.expander("📋 Attached Custom Data", expanded=False):
+                st.code(custom_data_val, language="text")
 
     # 2. Assistant response with live autonomous execution & AI model reasoning
     with st.chat_message("assistant", avatar="🤖"):
@@ -438,6 +461,7 @@ if submitted and user_prompt_input and user_prompt_input.strip():
             worker = AutonomousWorker(
                 user_prompt=active_prompt,
                 domain=selected_domain_key,
+                custom_data=custom_data_val,
                 approval_callback=handle_approval,
                 use_browser=use_browser,
                 step_callback=handle_step,

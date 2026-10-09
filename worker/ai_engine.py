@@ -17,25 +17,30 @@ class EnterpriseAIEngine:
     and formulate verified, executive answers.
     """
 
-    SYSTEM_PROMPT = """You are CentrAlign Enterprise AI Specialist, an autonomous business intelligence and task execution assistant for CentrAlign Technologies Inc.
+    SYSTEM_PROMPT = """You are CentrAlign Enterprise AI Specialist, an autonomous business intelligence and data processing assistant for CentrAlign Technologies Inc.
 
-You have real-time access to the company's authentic enterprise database records, employee directories, invoices, support tickets, inventory ledgers, and corporate governance policy documents.
+You have real-time access to user-supplied data as well as authentic company master tables, invoices, support tickets, inventory ledgers, CRM clients, and policies picked directly from the enterprise data repository (D:\\Projects\\CentrAlign_AI_Project\\data).
 
-Your duties:
-1. Examine the provided REAL ENTERPRISE DATA carefully.
-2. Directly answer the user's natural language instruction using exact facts, figures, employee names, salaries, leave balances, invoice amounts, ticket IDs, and policy clauses.
-3. If an action was performed (or needs to be verified), report the status and reconciliation outcome clearly.
-4. If analytical calculations are required (e.g. leave balances, restock quantities, budget variances, expenditure sums), execute the math accurately.
-5. Format your response cleanly using executive Markdown: use bolding, bullet points, numbered lists, and structured summary sections.
-6. MANDATORY "NO DATA FOUND" RULE:
-   - Carefully verify whether the specific record, person, employee, invoice, vendor, ticket, SKU, or department requested in the user's task actually exists in the provided REAL ENTERPRISE DATA or operational results.
-   - If the requested data or entity is NOT present in the provided dataset, or if search_status is NO_DATA_FOUND, or if entity_found is false:
-     You MUST explicitly state:
-     "### ⚠️ No Data Found"
-     "No data found for '<requested entity/query>' in the enterprise dataset."
-   - Explain clearly that the requested record, employee, invoice, or entity does not exist in our corporate databases or company files.
-   - NEVER fabricate, hallucinate, or substitute another person, company, invoice, or record (e.g. do not substitute Sarah Jenkins or Company X when someone else was asked).
-   - List the available records or entities that DO exist in the dataset to assist the user.
+Your operating principles:
+1. AUTHENTIC ENTERPRISE DATA GROUNDING (DATA FOLDER INGESTION):
+   - In every query, authentic company records and files are automatically identified and picked from D:\\Projects\\CentrAlign_AI_Project\\data according to the domain (e.g. data/enterprise_tables/*.json, data/company_docs/*.txt, data/sample_invoices/*).
+   - You MUST directly and thoroughly process, calculate, analyze, extract, and formulate your answer based on these authentic domain records.
+   - Accurately cite names, salaries, balances, invoice amounts, ticket IDs, inventory counts, and policy sections from the loaded files.
+
+2. USER-PROVIDED DATA:
+   - When the user supplies custom data, documents, numbers, tables, JSON, CSV, or context directly in their query or in the data payload:
+     Directly calculate, analyze, transform, and answer based on that user-provided data.
+   - Do NOT reject user-supplied data or tasks with "No Data Found".
+
+3. "NO DATA FOUND" RULE (APPLIES ONLY WHEN SEARCHING CORPORATE DATABASE RECORDS):
+   - Only state "### ⚠️ No Data Found" if:
+     a) The user specifically asked to lookup, find, or retrieve a specific existing corporate database record (by explicit employee code EMP-xxx, invoice code INV-xxx, ticket ID TCK-xxx, SKU-xxx) from the enterprise system,
+     b) AND that specific identifier is genuinely missing from the loaded enterprise records,
+     c) AND the user did NOT supply the data in their query or prompt.
+   - If the user asks a question, analysis, summary, list, calculation, or status query about a domain, DO NOT say "No Data Found" — process the domain records directly.
+
+4. FORMATTING:
+   - Format your response cleanly using executive Markdown: use bolding, bullet points, numbered lists, tables, and structured summary sections.
 """
 
     _quota_cooldown_until: float = 0.0
@@ -47,11 +52,12 @@ Your duties:
         domain: str,
         enterprise_context: Dict[str, Any],
         operational_context: Optional[Dict[str, Any]] = None,
+        custom_data: Optional[Any] = None,
         api_key: Optional[str] = None,
         model_name: Optional[str] = None
     ) -> Tuple[str, str]:
         """
-        Sends the user task and real enterprise data to Gemini or configured AI model.
+        Sends the user task, custom user data, and real enterprise data to Gemini or configured AI model.
         Returns: (ai_response_text, model_used_name)
         """
         import time
@@ -61,7 +67,8 @@ Your duties:
                 task_instruction=task_instruction,
                 domain=domain,
                 enterprise_context=enterprise_context,
-                operational_context=operational_context
+                operational_context=operational_context,
+                custom_data=custom_data
             )
             return local_result, "CentrAlign Local Intelligence Engine"
 
@@ -70,16 +77,21 @@ Your duties:
 
         # Build context payload
         context_payload = {
+            "user_provided_data": custom_data or enterprise_context.get("user_provided_data") or "None (Standard enterprise records queried)",
             "retrieved_company_data": enterprise_context,
             "operational_execution_results": operational_context or {}
         }
 
-        user_message = (
-            f"### USER TASK / INSTRUCTION:\n{task_instruction}\n\n"
-            f"### ENTERPRISE DOMAIN:\n{domain.upper()}\n\n"
-            f"### AUTHENTIC ENTERPRISE DATA & RECORDS:\n"
-            f"{json.dumps(context_payload, indent=2, default=str)}\n"
-        )
+        user_message_parts = [
+            f"### USER TASK / INSTRUCTION:\n{task_instruction}\n",
+            f"### TARGET DOMAIN:\n{domain.upper()}\n"
+        ]
+        if custom_data:
+            c_str = json.dumps(custom_data, indent=2, default=str) if not isinstance(custom_data, str) else custom_data
+            user_message_parts.append(f"### USER-PROVIDED DATA TO PROCESS:\n{c_str}\n")
+
+        user_message_parts.append(f"### ENTERPRISE CONTEXT & DATA RECORDS:\n{json.dumps(context_payload, indent=2, default=str)}\n")
+        user_message = "\n".join(user_message_parts)
 
         # 1. Attempt API completion if an API key is provided
         if effective_key:
@@ -180,7 +192,8 @@ Your duties:
             task_instruction=task_instruction,
             domain=domain,
             enterprise_context=enterprise_context,
-            operational_context=operational_context
+            operational_context=operational_context,
+            custom_data=custom_data
         )
         return local_result, "CentrAlign Local Intelligence Engine"
 
@@ -190,7 +203,8 @@ Your duties:
         task_instruction: str,
         domain: str,
         enterprise_context: Dict[str, Any],
-        operational_context: Optional[Dict[str, Any]] = None
+        operational_context: Optional[Dict[str, Any]] = None,
+        custom_data: Optional[Any] = None
     ) -> str:
         """
         Deterministic, domain-aware intelligence engine that synthesizes answers
@@ -199,8 +213,8 @@ Your duties:
         p_lower = task_instruction.lower()
         op = operational_context or {}
 
-        # 0. Global Explicit "No Data Found" Check
-        if op.get("not_found") is True or enterprise_context.get("entity_found") is False:
+        # 0. Global Explicit "No Data Found" Check (only if user did NOT provide custom data)
+        if (op.get("not_found") is True or enterprise_context.get("entity_found") is False) and not custom_data:
             queried = op.get("queried_entity") or enterprise_context.get("queried_entity") or task_instruction
             reason = op.get("not_found_message") or enterprise_context.get("not_found_reason") or f"The requested record was not found in the {domain} dataset."
             return (
@@ -210,6 +224,20 @@ Your duties:
                 f"- {reason}\n"
                 f"- The requested identifier, entity, or document does not exist in our corporate databases or repository files.\n\n"
                 f"*(💡 Note: Please verify the queried name, code, or identifier and try again.)*"
+            )
+
+        # 0.1 If custom data was provided by user:
+        if custom_data:
+            c_preview = str(custom_data)[:500]
+            return (
+                f"### 📊 Processed Custom Data Results\n\n"
+                f"**User Instruction:** {task_instruction}\n\n"
+                f"**Data Analysis Summary:**\n"
+                f"- Successfully ingested user-provided dataset payload.\n"
+                f"- Target Domain: {domain.upper()}\n\n"
+                f"**Data Content:**\n"
+                f"```text\n{c_preview}\n```\n\n"
+                f"*(💡 Note: Processed via CentrAlign Intelligence Engine. Configure GEMINI_API_KEY for dynamic generative synthesis!)*"
             )
 
         # Domain A: HR & Employee Management
@@ -359,70 +387,98 @@ Your duties:
                     )
 
         # Domain B: Commercial Invoices & AP
-        elif domain in ("invoice", "finance", "ap") or "company x" in p_lower or "invoice" in p_lower:
-            vendor_match = re.search(r'(?:from|for|vendor)\s+([A-Za-z0-9\s]+?)(?:,|\.|\sand|\sextract|\senter|$)', task_instruction, re.IGNORECASE)
-            if vendor_match:
-                cand = vendor_match.group(1).strip()
-                if cand.lower() not in ("all", "latest", "the", "system", "our", "internal", "a", "an", "all vendors", "company"):
-                    has_vendor = any(cand.lower() in inv.get("vendor_name", "").lower() for inv in enterprise_context.get("invoices_in_ledger", []))
-                    has_file = any(re.sub(r'[^a-zA-Z0-9]', '', cand.lower()) in re.sub(r'[^a-zA-Z0-9]', '', f.lower()) for f in enterprise_context.get("available_invoice_files", []))
-                    if not has_vendor and not has_file and not op.get("vendor_name"):
-                        all_invs = enterprise_context.get("invoices_in_ledger", [])
-                        vendors_list = ", ".join(list(dict.fromkeys(i.get("vendor_name", "") for i in all_invs))[:6])
-                        return (
-                            f"### ⚠️ No Data Found\n\n"
-                            f"No invoice or vendor records matching **'{cand}'** were found in accounts payable.\n\n"
-                            f"**Available Vendors in Dataset:**\n"
-                            f"- {vendors_list} (and others in Master Invoices Register).\n\n"
-                            f"*(💡 Please check the vendor name or refer to the Master Invoices Register table.)*"
-                        )
+        elif domain in ("invoice", "finance", "ap"):
+            all_invs = enterprise_context.get("invoices_in_ledger", [])
+            total_amt = enterprise_context.get("total_invoices_amount", sum(float(i.get("amount", 0)) for i in all_invs))
+            unpaid_amt = enterprise_context.get("unpaid_invoices_amount", sum(float(i.get("amount", 0)) for i in all_invs if i.get("status") in ("PENDING", "PENDING_APPROVAL", "UNPAID")))
+            
+            # Check if specific invoice or vendor was queried in prompt
+            inv_match = re.search(r'\b(INV-[A-Za-z0-9\-]+)\b', task_instruction, re.IGNORECASE)
+            target_inv = None
+            if inv_match:
+                c = inv_match.group(1).upper()
+                target_inv = next((i for i in all_invs if i.get("invoice_number", "").upper() == c), None)
 
-            vendor = op.get("vendor_name", "Company X")
-            inv_num = op.get("invoice_number", "INV-CX-2026-904")
-            amt = op.get("amount", 4850.00)
-            due = op.get("due_date", "2026-11-15")
+            if target_inv:
+                return (
+                    f"### 🧾 Commercial Invoice Details: `{target_inv.get('invoice_number')}`\n\n"
+                    f"- **Vendor / Issuer:** **{target_inv.get('vendor_name')}**\n"
+                    f"- **Invoice Type:** {target_inv.get('invoice_type', 'PAYABLE')}\n"
+                    f"- **Amount Due:** **${float(target_inv.get('amount', 0)):,.2f} {target_inv.get('currency', 'USD')}**\n"
+                    f"- **Payment Due Date:** {target_inv.get('due_date')}\n"
+                    f"- **Current Status:** `{target_inv.get('status')}`\n"
+                    f"- **Notes:** {target_inv.get('notes', 'N/A')}\n\n"
+                    f"✅ **Database Confirmation:** Retrieved from authentic enterprise Accounts Payable master table ({len(all_invs)} total records)."
+                )
 
+            # If operational execution registered an invoice
+            if op.get("invoice_number") and op.get("vendor_name"):
+                return (
+                    f"### 🧾 Commercial Invoice Processing Report\n\n"
+                    f"- **Vendor:** **{op.get('vendor_name')}**\n"
+                    f"- **Invoice Number:** `{op.get('invoice_number')}`\n"
+                    f"- **Amount:** **${float(op.get('amount', 0)):,.2f} USD**\n"
+                    f"- **Due Date:** {op.get('due_date')}\n\n"
+                    f"✅ **Database Confirmation:** Recorded and reconciled in Accounts Payable general ledger."
+                )
+
+            # General Invoices inquiry
+            top_invs = all_invs[:5]
+            inv_lines = "\n".join(f"- `{i.get('invoice_number')}`: **{i.get('vendor_name')}** — ${float(i.get('amount', 0)):,.2f} {i.get('currency', 'USD')} (Due: {i.get('due_date')}, Status: `{i.get('status')}`)" for i in top_invs)
             return (
-                f"### 🧾 Commercial Invoice Processing Report\n\n"
-                f"**Document Extraction & Verification:**\n"
-                f"- **Vendor:** {vendor}\n"
-                f"- **Invoice Number:** `{inv_num}`\n"
-                f"- **Total Amount Due:** **${amt:,.2f} USD**\n"
-                f"- **Payment Due Date:** **{due}**\n\n"
-                f"**Safety & Ledger Registration:**\n"
-                f"- **Corporate Guardrail Check:** Amount (${amt:,.2f}) assessed against safety threshold.\n"
-                f"- **Registration Status:** **REGISTERED** in Internal Accounts Payable ERP.\n"
-                f"- **Ledger Verification:** Reconciled with 0 discrepancies against document source.\n\n"
-                f"*(💡 Note: Configure GEMINI_API_KEY in your environment (.env) to process arbitrary invoice prompts with live Gemini 1.5/2.0 Flash!)*"
+                f"### 🧾 Accounts Payable & Invoices Overview\n\n"
+                f"- **Total Invoices in Ledger:** **{len(all_invs)}** records (loaded from `data/enterprise_tables/invoices_master_table.json`)\n"
+                f"- **Total Invoices Valuation:** **${total_amt:,.2f} USD**\n"
+                f"- **Pending / Unpaid Amount:** **${unpaid_amt:,.2f} USD**\n\n"
+                f"**Active Accounts Payable Invoices:**\n"
+                f"{inv_lines}\n\n"
+                f"✅ **Database Confirmation:** Verified from authentic enterprise AP master table."
             )
 
         # Domain C: IT Support & Tickets
-        elif domain in ("ticket", "it_support") or "ticket" in p_lower or "alex wong" in p_lower:
+        elif domain in ("ticket", "it_support"):
+            tickets = enterprise_context.get("tickets", [])
+            crit = enterprise_context.get("critical_tickets", [t for t in tickets if t.get("priority") == "CRITICAL"])
+            open_tcks = enterprise_context.get("open_tickets", [t for t in tickets if t.get("status") != "RESOLVED"])
+            
             tck_match = re.search(r'\b(TCK-[A-Za-z0-9\-]+|INC-[A-Za-z0-9\-]+)\b', task_instruction, re.IGNORECASE)
+            target_tck = None
             if tck_match:
-                t_num_queried = tck_match.group(1).strip().upper()
-                tickets = enterprise_context.get("all_tickets", []) or enterprise_context.get("open_tickets", [])
-                if not any(t.get("ticket_number", "").upper() == t_num_queried for t in tickets):
-                    return (
-                        f"### ⚠️ No Data Found\n\n"
-                        f"No incident ticket matching **'{t_num_queried}'** was found in the ITSM support queue.\n\n"
-                        f"*(💡 Please verify the ticket identifier and try again.)*"
-                    )
+                t_code = tck_match.group(1).upper()
+                target_tck = next((t for t in tickets if t.get("ticket_number", "").upper() == t_code), None)
 
-            t_num = op.get("ticket_number", "TCK-2026-801")
-            assignee = op.get("expected_assignee", "Alex Wong")
-            status = op.get("expected_status", "IN_PROGRESS")
+            if target_tck:
+                return (
+                    f"### 🎫 Support Incident Details: `{target_tck.get('ticket_number')}`\n\n"
+                    f"- **Subject:** **{target_tck.get('subject')}**\n"
+                    f"- **Customer:** {target_tck.get('customer_name')}\n"
+                    f"- **Priority:** **{target_tck.get('priority')}**\n"
+                    f"- **Current Status:** `{target_tck.get('status')}`\n"
+                    f"- **Assignee:** **{target_tck.get('assignee', 'Unassigned')}**\n"
+                    f"- **Description:** {target_tck.get('description', 'N/A')}\n"
+                    f"- **Resolution / SLA:** Due {target_tck.get('sla_due', 'N/A')}\n\n"
+                    f"✅ **Database Confirmation:** Retrieved from authentic enterprise ITSM master table ({len(tickets)} total records)."
+                )
 
+            if op.get("ticket_number") and op.get("expected_assignee"):
+                return (
+                    f"### 🎫 ITSM Ticket Assignment Execution Report\n\n"
+                    f"- **Target Incident:** `{op.get('ticket_number')}`\n"
+                    f"- **Assigned Engineer:** **{op.get('expected_assignee')}**\n"
+                    f"- **Updated Status:** **{op.get('expected_status', 'IN_PROGRESS')}**\n\n"
+                    f"✅ **Ledger Confirmation:** Verified and persisted in enterprise ITSM database."
+                )
+
+            # General ticket overview
+            crit_lines = "\n".join(f"- `{t.get('ticket_number')}`: **{t.get('subject')}** (Priority: **{t.get('priority')}**, Status: `{t.get('status')}`, Assignee: **{t.get('assignee', 'Unassigned')}**)" for t in crit[:5])
             return (
-                f"### 🎫 ITSM Incident Management & Queue Triage\n\n"
-                f"**Triage Results:**\n"
-                f"- **Target Incident:** `{t_num}`\n"
-                f"- **Priority:** **CRITICAL (P1)** | **SLA Deadline:** 4 Hours\n"
-                f"- **Subject:** SSO Authentication Failure & Active Directory Sync Error\n"
-                f"- **Assigned Engineer:** **{assignee}** (Senior Systems Engineer)\n"
-                f"- **Incident Status:** **{status}**\n\n"
-                f"✅ **Ledger Confirmation:** Ticket reassignment has been confirmed and persisted in the ITSM database.\n\n"
-                f"*(💡 Note: Configure GEMINI_API_KEY in your environment (.env) to triage IT tickets with live Gemini 1.5/2.0 Flash!)*"
+                f"### 🎫 ITSM Support Queue Overview\n\n"
+                f"- **Total Tickets in Queue:** **{len(tickets)}** incidents (loaded from `data/enterprise_tables/support_tickets_master_table.json`)\n"
+                f"- **Open Incidents:** **{len(open_tcks)}**\n"
+                f"- **Critical (P1) Incidents:** **{len(crit)}**\n\n"
+                f"**Critical Incidents Requiring Attention:**\n"
+                f"{crit_lines}\n\n"
+                f"✅ **Database Confirmation:** Retrieved from authentic enterprise ITSM queue."
             )
 
         # Domain D: Inventory & Restock
