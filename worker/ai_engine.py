@@ -38,7 +38,7 @@ Your duties:
    - List the available records or entities that DO exist in the dataset to assist the user.
 """
 
-    _quota_exhausted: bool = False
+    _quota_cooldown_until: float = 0.0
 
     @classmethod
     async def process_task(
@@ -54,8 +54,9 @@ Your duties:
         Sends the user task and real enterprise data to Gemini or configured AI model.
         Returns: (ai_response_text, model_used_name)
         """
-        # If API quota was previously detected as exhausted, fast-fail directly to Local Intelligence
-        if cls._quota_exhausted:
+        import time
+        # If API quota was recently detected as exhausted, respect cooldown before retrying
+        if cls._quota_cooldown_until > time.time():
             local_result = cls._local_enterprise_reasoning(
                 task_instruction=task_instruction,
                 domain=domain,
@@ -65,7 +66,7 @@ Your duties:
             return local_result, "CentrAlign Local Intelligence Engine"
 
         effective_key = (api_key or settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
-        selected_model = (model_name or settings.DEFAULT_MODEL or "gemini/gemini-1.5-flash").strip()
+        selected_model = (model_name or settings.DEFAULT_MODEL or "gemini/gemini-3.5-flash").strip()
 
         # Build context payload
         context_payload = {
@@ -82,50 +83,58 @@ Your duties:
 
         # 1. Attempt API completion if an API key is provided
         if effective_key:
-            # Method A: Try LiteLLM
-            try:
-                import litellm
-                clean_model = selected_model
-                if not clean_model.startswith("gemini/") and "gemini" in clean_model.lower():
-                    clean_model = f"gemini/{clean_model}"
+            # Build list of LiteLLM model candidates (starting with selected, prioritizing active models)
+            primary_model = selected_model
+            if not primary_model.startswith("gemini/") and "gemini" in primary_model.lower():
+                primary_model = f"gemini/{primary_model}"
+            
+            litellm_candidates = list(dict.fromkeys([
+                primary_model,
+                "gemini/gemini-3.5-flash",
+                "gemini/gemini-3.5-flash-lite",
+                "gemini/gemini-3.8-flash"
+            ]))
 
-                response = litellm.completion(
-                    model=clean_model,
-                    messages=[
-                        {"role": "system", "content": cls.SYSTEM_PROMPT},
-                        {"role": "user", "content": user_message}
-                    ],
-                    api_key=effective_key,
-                    temperature=0.2,
-                    timeout=8,
-                    num_retries=1
-                )
-                ai_text = response.choices[0].message.content.strip()
-                return ai_text, f"AI Model: {clean_model}"
-            except Exception as e:
-                err_str = str(e)
-                logger.warning(f"LiteLLM completion encountered issue: {err_str}.")
-                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
-                    logger.info("API quota exhausted. Transitioning directly to Local Intelligence Engine.")
-                    cls._quota_exhausted = True
-                    local_result = cls._local_enterprise_reasoning(
-                        task_instruction=task_instruction,
-                        domain=domain,
-                        enterprise_context=enterprise_context,
-                        operational_context=operational_context
+            # Method A: Try LiteLLM
+            for lit_mdl in litellm_candidates:
+                try:
+                    import litellm
+                    response = litellm.completion(
+                        model=lit_mdl,
+                        messages=[
+                            {"role": "system", "content": cls.SYSTEM_PROMPT},
+                            {"role": "user", "content": user_message}
+                        ],
+                        api_key=effective_key,
+                        temperature=0.2,
+                        timeout=15,
+                        num_retries=1
                     )
-                    return local_result, "CentrAlign Local Intelligence Engine"
-                logger.warning("Trying direct Gemini REST endpoint...")
+                    ai_text = response.choices[0].message.content.strip()
+                    if ai_text:
+                        cls._quota_cooldown_until = 0.0
+                        return ai_text, f"AI Model: {lit_mdl}"
+                except Exception as e:
+                    err_str = str(e)
+                    logger.warning(f"LiteLLM completion with {lit_mdl} issue: {err_str}.")
+                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                        continue
+
+            logger.info("Transitioning to direct Gemini REST endpoint...")
 
             # Method B: Direct Google Gemini REST API via httpx
             if "gemini" in selected_model.lower() or effective_key.startswith("AIza") or effective_key.startswith("AQ."):
                 try:
                     clean_gemini_model = selected_model.replace("gemini/", "").replace("google/", "").strip()
-                    if not clean_gemini_model or clean_gemini_model == "gemini-1.5-flash":
-                        clean_gemini_model = "gemini-3.8-flash"
-
-                    # Candidate models to try in sequence for maximum reliability
-                    candidate_models = list(dict.fromkeys([clean_gemini_model, "gemini-3.8-flash", "gemini-3.1-flash-lite"]))
+                    
+                    # Candidate models to try in sequence for maximum reliability and speed
+                    candidate_models = list(dict.fromkeys([
+                        clean_gemini_model,
+                        "gemini-3.5-flash",
+                        "gemini-3.5-flash-lite",
+                        "gemini-3.8-flash",
+                        "gemini-3.1-flash-lite"
+                    ]))
 
                     for mdl in candidate_models:
                         try:
@@ -142,7 +151,7 @@ Your duties:
                                 }
                             }
 
-                            async with httpx.AsyncClient(timeout=45.0) as client:
+                            async with httpx.AsyncClient(timeout=25.0) as client:
                                 resp = await client.post(url, json=payload)
                                 if resp.status_code == 200:
                                     data = resp.json()
@@ -151,13 +160,14 @@ Your duties:
                                         parts = candidates[0].get("content", {}).get("parts", [])
                                         if parts:
                                             ai_text = parts[0].get("text", "").strip()
-                                            return ai_text, f"Gemini API ({mdl})"
+                                            if ai_text:
+                                                cls._quota_cooldown_until = 0.0
+                                                return ai_text, f"Gemini API ({mdl})"
                                 elif resp.status_code == 429:
-                                    logger.info(f"Gemini model {mdl} quota exhausted (HTTP 429). Fast-failing to Local Reasoner.")
-                                    cls._quota_exhausted = True
-                                    break
-                                elif resp.status_code == 503:
-                                    logger.warning(f"Gemini model {mdl} busy (HTTP {resp.status_code}). Trying next fallback candidate...")
+                                    logger.info(f"Gemini model {mdl} rate limited (HTTP 429). Trying fallback candidate...")
+                                    continue
+                                elif resp.status_code in (503, 500, 502):
+                                    logger.warning(f"Gemini model {mdl} busy/error (HTTP {resp.status_code}). Trying next fallback candidate...")
                                     continue
                         except Exception as candidate_err:
                             logger.warning(f"Error querying candidate model {mdl}: {candidate_err}")

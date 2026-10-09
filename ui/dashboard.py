@@ -103,7 +103,7 @@ gemini_key = (
     or os.getenv("GOOGLE_API_KEY")
     or ""
 )
-selected_model = os.getenv("DEFAULT_MODEL", "gemini/gemini-3.8-flash")
+selected_model = os.getenv("DEFAULT_MODEL", "gemini/gemini-3.5-flash")
 use_browser = True
 
 # App Header

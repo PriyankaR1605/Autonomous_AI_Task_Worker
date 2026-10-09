@@ -16,6 +16,8 @@ pypdf>=4.3.0
 pydantic>=2.8.0
 python-dotenv>=1.0.1
 litellm>=1.40.0
+tenacity>=9.0.0
 
 # UI Dashboard & Demo
 streamlit>=1.38.0
+

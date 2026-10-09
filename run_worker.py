@@ -30,7 +30,16 @@ def human_approval_prompt(req: ApprovalRequest) -> bool:
 
 async def main():
     default_prompt = "Find the latest invoice from Company X, extract the amount and due date, enter it into our internal system, and tell me once it is done."
-    prompt = sys.argv[1] if len(sys.argv) > 1 else default_prompt
+    if len(sys.argv) > 1:
+        prompt = " ".join(sys.argv[1:])
+    else:
+        try:
+            user_in = input("Enter task instruction (or press Enter for default Company X demo): ").strip()
+            prompt = user_in if user_in else default_prompt
+        except (EOFError, KeyboardInterrupt):
+            prompt = default_prompt
+        except Exception:
+            prompt = default_prompt
 
     print("=" * 65)
     print("[AI] CENTRALIGN AUTONOMOUS AI TASK WORKER")

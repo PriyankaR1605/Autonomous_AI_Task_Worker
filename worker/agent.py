@@ -205,9 +205,27 @@ class AutonomousWorker:
 
         # M1: Locate Target Invoice File
         m1.status = StepStatus.IN_PROGRESS
+        p_l = self.state.user_prompt.lower()
         vendor_match = re.search(r'(?:from|for|vendor)\s+([A-Za-z0-9\s]+?)(?:,|\.|\sand|\sextract|\senter|$)', self.state.user_prompt, re.IGNORECASE)
         inv_match = re.search(r'\b(INV-[A-Za-z0-9\-]+)\b', self.state.user_prompt, re.IGNORECASE)
-        
+        is_process_action = any(w in p_l for w in ("extract", "enter", "process", "register", "submit", "pay", "book"))
+
+        # If general inquiry without explicit vendor, gather all records for AI analysis
+        if not vendor_match and not inv_match and not is_process_action:
+            from mock_erp.database import get_all_invoices
+            all_invs = get_all_invoices()
+            for m in self.state.milestones:
+                m.status = StepStatus.SUCCESS
+            m1.result_summary = f"Retrieved {len(all_invs)} invoice records from enterprise ledger."
+            self.state.working_memory["all_invoices"] = all_invs
+            self.state.working_memory["inquiry"] = True
+            self.state.status = TaskStatus.COMPLETED
+            v_res = OutcomeVerifier.verify("invoice", self.state.working_memory)
+            self.state.verification = v_res
+            report_path = EvidencePackager.generate_report(self.state)
+            self.state.evidence_report_path = report_path
+            return
+
         target_vendor = vendor_match.group(1).strip() if vendor_match else ("Company X" if not inv_match else inv_match.group(1).strip())
 
         thought_1 = f"I need to locate the invoice document or records for '{target_vendor}' in the enterprise repository."
@@ -225,7 +243,6 @@ class AutonomousWorker:
                 v_name = vendor_match.group(1).strip().lower()
                 matched_invs = [i for i in all_invs if v_name in i.get("vendor_name", "").lower()]
             if not matched_invs:
-                p_l = self.state.user_prompt.lower()
                 if "payable" in p_l or "november" in p_l or "due" in p_l:
                     matched_invs = [i for i in all_invs if i.get("invoice_type") == "PAYABLE"]
 
